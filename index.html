@@ -375,6 +375,18 @@
     color:#fff;
     cursor:pointer;
   }
+  .edit-toggle-btn{
+    position:absolute;
+    top:6px; left:6px;
+    z-index:5;
+    font-size:10px;
+    padding:4px 7px;
+    border:none;
+    border-radius:4px;
+    background:rgba(0,0,0,.65);
+    color:#fff;
+    cursor:pointer;
+  }
   .card.is-hidden .thumb img{
     opacity:.35;
   }
@@ -388,6 +400,106 @@
     padding:1px 6px;
     border-radius:3px;
     vertical-align:middle;
+  }
+
+  #workEditorOverlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,.6);
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:40px 20px;
+    overflow-y:auto;
+    z-index:300;
+  }
+  #workEditorOverlay[hidden]{ display:none; }
+  .work-editor{
+    background:var(--card-bg);
+    color:var(--ink);
+    max-width:560px;
+    width:100%;
+    border-radius:8px;
+    padding:28px 28px 32px;
+    box-shadow:0 24px 70px rgba(0,0,0,.45);
+  }
+  .work-editor h2{
+    font-size:16px;
+    margin:0 0 16px;
+  }
+  .we-field{ margin-bottom:14px; }
+  .we-field label{
+    display:block;
+    font-size:11px;
+    font-weight:700;
+    color:var(--sub);
+    margin-bottom:4px;
+  }
+  .we-field input[type="text"],
+  .we-field textarea{
+    width:100%;
+    font-size:13px;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:inherit;
+  }
+  .we-field textarea{ resize:vertical; }
+  .we-thumb-preview{
+    width:120px; height:120px;
+    border-radius:4px;
+    object-fit:cover;
+    border:1px solid var(--line);
+    background:var(--bg);
+    display:block;
+    margin-bottom:8px;
+  }
+  .we-gallery-list{
+    display:flex; flex-wrap:wrap; gap:8px;
+    margin-bottom:8px;
+  }
+  .we-gallery-item{
+    position:relative;
+    width:64px; height:64px;
+  }
+  .we-gallery-item img{
+    width:100%; height:100%;
+    object-fit:cover;
+    border-radius:4px;
+    border:1px solid var(--line);
+    display:block;
+  }
+  .we-gallery-item button{
+    position:absolute; top:-6px; right:-6px;
+    width:18px; height:18px;
+    border-radius:50%;
+    border:none;
+    background:#b33;
+    color:#fff;
+    font-size:11px;
+    line-height:1;
+    cursor:pointer;
+    padding:0;
+  }
+  .we-actions{
+    display:flex; gap:8px;
+    margin-top:16px;
+  }
+  .we-actions button{
+    font-size:12px;
+    font-weight:700;
+    padding:9px 14px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+  }
+  .we-save-btn{ background:var(--accent); color:#fff; }
+  .we-cancel-btn{ background:var(--line); color:var(--ink); }
+  #weStatus{
+    margin-top:10px;
+    font-size:12px;
+    color:var(--sub);
+    line-height:1.6;
+    white-space:pre-wrap;
   }
 </style>
 </head>
@@ -434,7 +546,7 @@
 
 近年はVirtual Live、VTuber MV、VRコンテンツ開発など、仮想空間での演出、制作に携わる傍ら、2016年から[Alexandros]のライブにて、各公演コンセプトに合わせた独自のVJシステムを開発・提供している等、現実でのインタラクティブコンテンツ開発も行う。
 
-私はクリエイターとして「Kuugaze」と「Yukinomitama」という二つの名前を持っています。作品のコンテキストに応じて、この二つのクリエイティブペルソナを自在に切り替え、新たなインスピーションを解き放ちます。`,
+私はクリエイターとして「Kuugaze」と「Yukinomitama」という二つの名前を持っています。作品のコンテキストに応じて、この二つのクリエイティブペルソナを自在に切り替え、新たなインスピレーションを解き放ちます。`,
     meta: `Domains of Expertise
 VFX, MotionGraphics, Compositing
 Modeling, Rigging, Texturing
@@ -450,6 +562,9 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
   function escapeHtml(s){
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
+  function escapeAttr(s){
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
   function fmt(text){
     if(!text) return '';
     let esc = escapeHtml(text);
@@ -462,9 +577,12 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     const toggleBtn = isAdminCard
       ? `<button type="button" class="hide-toggle-btn" data-key="${work.key}">${work.hidden ? '表示する' : '非公開にする'}</button>`
       : '';
+    const editBtn = isAdminCard
+      ? `<button type="button" class="edit-toggle-btn" data-key="${work.key}">編集</button>`
+      : '';
     const hiddenBadge = (isAdminCard && work.hidden) ? '<span class="hidden-badge">非公開</span>' : '';
     return `<div class="card${hiddenClass}" data-modal="${work.key}">`
-      + `<div class="thumb">${toggleBtn}<img src="${work.thumb}" alt="" loading="lazy"></div>`
+      + `<div class="thumb">${editBtn}${toggleBtn}<img src="${work.thumb}" alt="" loading="lazy"></div>`
       + `<div class="caption"><span class="cap-label">${escapeHtml(work.category || '')}</span><span class="cap-title">${escapeHtml(work.title || '')}</span>${hiddenBadge}</div>`
       + `</div>`;
   }
@@ -590,26 +708,156 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     });
   }
 
-  function wireAddWorkForm(panel){
-    const catI = panel.querySelector('#newCategory');
-    const titleI = panel.querySelector('#newTitle');
-    const subI = panel.querySelector('#newSubtitle');
-    const jpI = panel.querySelector('#newJp');
-    const btn = panel.querySelector('#adminAddCopyBtn');
-    const status = panel.querySelector('#adminAddStatus');
-    btn.addEventListener('click', async () => {
-      const title = titleI.value.trim();
+  function enableEditButtons(){
+    grid.querySelectorAll('.edit-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const key = btn.dataset.key;
+        openWorkEditor(WORKS_BY_KEY[key] || null);
+      });
+    });
+  }
+
+  function parseEmbedUrl(url){
+    if(!url) return null;
+    url = url.trim();
+    if(!url) return null;
+    let m = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]v=([a-zA-Z0-9_-]+)/) || url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
+    if(m) return { type: 'youtube', id: m[1] };
+    m = url.match(/vimeo\.com\/(?:video\/)?(\d+)(?:\/([a-zA-Z0-9]+))?/);
+    if(m){
+      const embed = { type: 'vimeo', id: m[1] };
+      if(m[2]) embed.h = m[2];
+      return embed;
+    }
+    return null;
+  }
+  function embedToUrl(embed){
+    if(!embed) return '';
+    if(embed.type === 'youtube') return `https://youtu.be/${embed.id}`;
+    if(embed.type === 'vimeo') return `https://vimeo.com/${embed.id}${embed.h ? '/'+embed.h : ''}`;
+    return '';
+  }
+
+  let weState = null;
+
+  function openWorkEditor(work){
+    const existing = document.getElementById('workEditorOverlay');
+    if(existing) existing.remove();
+
+    const isNew = !work;
+    weState = {
+      key: isNew ? null : work.key,
+      pendingThumbFile: null,
+      remainingImages: (!isNew && work.images) ? [...work.images] : [],
+      pendingGalleryFiles: []
+    };
+
+    const overlay = document.createElement('div');
+    overlay.id = 'workEditorOverlay';
+    overlay.innerHTML = `
+      <div class="work-editor">
+        <h2>${isNew ? '新しい作品を追加' : '作品を編集'}</h2>
+        <div class="we-field">
+          <label>サムネイル</label>
+          <img class="we-thumb-preview" id="weThumbPreview" src="${isNew ? '' : escapeAttr(work.thumb)}" ${isNew ? 'style="display:none"' : ''}>
+          <input type="file" id="weThumbFile" accept="image/*">
+        </div>
+        <div class="we-field"><label>カテゴリ</label><input type="text" id="weCategory" value="${isNew ? '' : escapeAttr(work.category || '')}"></div>
+        <div class="we-field"><label>タイトル（必須）</label><input type="text" id="weTitle" value="${isNew ? '' : escapeAttr(work.title || '')}"></div>
+        <div class="we-field"><label>サブタイトル</label><input type="text" id="weSubtitle" value="${isNew ? '' : escapeAttr(work.subtitle || '')}"></div>
+        <div class="we-field"><label>本文（日本語）</label><textarea id="weJp" rows="5">${isNew ? '' : escapeHtml(work.jp || '')}</textarea></div>
+        <div class="we-field"><label>本文（英語・任意）</label><textarea id="weEn" rows="4">${isNew ? '' : escapeHtml(work.en || '')}</textarea></div>
+        <div class="we-field"><label>メタ情報（任意）</label><textarea id="weMeta" rows="3">${isNew ? '' : escapeHtml(work.meta || '')}</textarea></div>
+        <div class="we-field"><label>備考（任意）</label><textarea id="weNote" rows="3">${isNew ? '' : escapeHtml(work.note || '')}</textarea></div>
+        <div class="we-field"><label>動画URL（YouTube / Vimeo・任意）</label><input type="text" id="weEmbed" value="${isNew ? '' : escapeAttr(embedToUrl(work.embed))}" placeholder="https://youtu.be/..."></div>
+        <div class="we-field">
+          <label>ギャラリー画像</label>
+          <div class="we-gallery-list" id="weGalleryList"></div>
+          <input type="file" id="weGalleryFile" accept="image/*" multiple>
+        </div>
+        <div class="we-actions">
+          <button type="button" class="we-save-btn" id="weCopyBtn">コピーする</button>
+          <button type="button" class="we-cancel-btn" id="weCancelBtn">閉じる</button>
+        </div>
+        <div id="weStatus"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    function renderGalleryList(){
+      const list = overlay.querySelector('#weGalleryList');
+      if(!list) return;
+      let html = '';
+      weState.remainingImages.forEach((url, i) => {
+        html += `<div class="we-gallery-item"><img src="${escapeAttr(url)}" alt=""><button type="button" data-kind="existing" data-idx="${i}">×</button></div>`;
+      });
+      weState.pendingGalleryFiles.forEach((f, i) => {
+        html += `<div class="we-gallery-item"><img src="${URL.createObjectURL(f)}" alt=""><button type="button" data-kind="pending" data-idx="${i}">×</button></div>`;
+      });
+      list.innerHTML = html;
+      list.querySelectorAll('button').forEach(b => {
+        b.addEventListener('click', () => {
+          const idx = parseInt(b.dataset.idx, 10);
+          if(b.dataset.kind === 'existing') weState.remainingImages.splice(idx, 1);
+          else weState.pendingGalleryFiles.splice(idx, 1);
+          renderGalleryList();
+        });
+      });
+    }
+    renderGalleryList();
+
+    const thumbFileInput = overlay.querySelector('#weThumbFile');
+    const thumbPreview = overlay.querySelector('#weThumbPreview');
+    thumbFileInput.addEventListener('change', () => {
+      const f = thumbFileInput.files[0];
+      if(!f) return;
+      weState.pendingThumbFile = f;
+      thumbPreview.src = URL.createObjectURL(f);
+      thumbPreview.style.display = 'block';
+    });
+
+    const galleryFileInput = overlay.querySelector('#weGalleryFile');
+    galleryFileInput.addEventListener('change', () => {
+      weState.pendingGalleryFiles.push(...Array.from(galleryFileInput.files));
+      galleryFileInput.value = '';
+      renderGalleryList();
+    });
+
+    overlay.querySelector('#weCancelBtn').addEventListener('click', () => {
+      overlay.remove();
+      weState = null;
+    });
+
+    overlay.querySelector('#weCopyBtn').addEventListener('click', async () => {
+      const title = overlay.querySelector('#weTitle').value.trim();
+      const status = overlay.querySelector('#weStatus');
       if(!title){ status.textContent = 'タイトルを入力してください'; return; }
-      const data = {
-        category: catI.value.trim(),
+      const embed = parseEmbedUrl(overlay.querySelector('#weEmbed').value);
+      const payload = {
+        key: weState.key,
+        category: overlay.querySelector('#weCategory').value.trim(),
         title,
-        subtitle: subI.value.trim(),
-        jp: jpI.value.trim()
+        subtitle: overlay.querySelector('#weSubtitle').value.trim(),
+        jp: overlay.querySelector('#weJp').value.trim(),
+        en: overlay.querySelector('#weEn').value.trim(),
+        meta: overlay.querySelector('#weMeta').value.trim(),
+        note: overlay.querySelector('#weNote').value.trim(),
+        embed,
+        existingImages: weState.remainingImages,
+        newThumbnail: weState.pendingThumbFile ? weState.pendingThumbFile.name : null,
+        newGalleryImages: weState.pendingGalleryFiles.map(f => f.name)
       };
-      const text = JSON.stringify(data, null, 2);
+      const text = JSON.stringify(payload, null, 2);
+      const filesToAttach = [];
+      if(weState.pendingThumbFile) filesToAttach.push(weState.pendingThumbFile.name);
+      weState.pendingGalleryFiles.forEach(f => filesToAttach.push(f.name));
       try{
         await navigator.clipboard.writeText(text);
-        status.textContent = 'コピーしました。サムネイル画像も添えてClaudeに貼り付けて送ってください。';
+        status.textContent = filesToAttach.length
+          ? `コピーしました。次の画像ファイルをこの内容と一緒にチャットに添付して送ってください：${filesToAttach.join('、')}`
+          : 'コピーしました。そのままClaudeに貼り付けて送ってください。';
       }catch(err){
         status.textContent = text;
       }
@@ -621,18 +869,11 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     panel.id = 'adminPanel';
     panel.innerHTML = `
       <div class="admin-title">管理者モード</div>
-      <div class="admin-desc">カードをドラッグして並び替え、右上のボタンで公開・非公開を切り替えられます。変更したらボタンでコピーして、そのままClaudeとのチャットに貼り付けて送ってください。反映しておきます。</div>
-      <button id="adminCopyBtn">変更をコピー</button>
+      <div class="admin-desc">カードをドラッグして並び替え、左上の「編集」でサムネ・キャプション・画像・動画を変更、右上のボタンで公開・非公開を切り替えられます。変更したらボタンでコピーして、そのままClaudeとのチャットに貼り付けて送ってください（画像を変更した場合は、その画像ファイルも一緒に添付してください）。</div>
+      <button id="adminCopyBtn">並び替え・公開状態をコピー</button>
       <div id="adminStatus"></div>
       <hr class="admin-divider">
-      <div class="admin-title">作品を追加</div>
-      <div class="admin-desc">項目を入力してコピーし、サムネイル画像を添えてClaudeに送ってください。</div>
-      <input type="text" id="newCategory" placeholder="カテゴリ（例: Music Video）">
-      <input type="text" id="newTitle" placeholder="タイトル（必須）">
-      <input type="text" id="newSubtitle" placeholder="サブタイトル">
-      <textarea id="newJp" placeholder="本文（日本語）" rows="3"></textarea>
-      <button id="adminAddCopyBtn">この内容をコピー</button>
-      <div id="adminAddStatus"></div>
+      <button id="adminAddNewBtn">＋ 新しい作品を追加</button>
     `;
     document.body.appendChild(panel);
 
@@ -651,7 +892,9 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
       }
     });
 
-    wireAddWorkForm(panel);
+    panel.querySelector('#adminAddNewBtn').addEventListener('click', () => {
+      openWorkEditor(null);
+    });
   }
 
   fetch('works.json')
@@ -664,6 +907,7 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
       if(isAdmin){
         enableDragReorder();
         enableHideToggle();
+        enableEditButtons();
         buildAdminPanel();
       }
     })
