@@ -10,9 +10,22 @@
     "heading2": "visual archives",
     "meta": "Title : vxperience\nMusic : Created with AI\nMovie : Kuugaze",
     "note": "The video below was produced using the system used on-site and has been edited for archival purposes.\n下記映像は、現場で使用したシステムを活用して制作したものであり、アーカイブ目的で編集したものです。",
-    "embed": { "type": "vimeo", "id": "1029941160", "h": "6809d01025" },
+    "embed": {
+      "type": "vimeo",
+      "id": "1029941160",
+      "h": "6809d01025"
+    },
     "embedThumb": "images/vidthumb_showcase.jpg",
-    "images": ["images/showcase_1.jpg","images/showcase_2.jpg","images/showcase_3.jpg","images/showcase_4.jpg","images/showcase_5.jpg","images/showcase_6.jpg","images/showcase_7.jpg","images/showcase_8.jpg"]
+    "images": [
+      "images/showcase_1.jpg",
+      "images/showcase_2.jpg",
+      "images/showcase_3.jpg",
+      "images/showcase_4.jpg",
+      "images/showcase_5.jpg",
+      "images/showcase_6.jpg",
+      "images/showcase_7.jpg",
+      "images/showcase_8.jpg"
+    ]
   },
   {
     "key": "zerofes",
@@ -23,8 +36,14 @@
     "jp": "ZEROFES 2026にてオーディオビジュアルチームBRDGのメンバーとして参加\n会場内のリアルタイムカメラ映像に対し、ライブで映像エフェクトを適用し、音楽と連動したビジュアル演出を行いました。",
     "en": "Participated in ZEROFES 2026 as a member of the VJ collective BRDG.\nProcessed real-time camera feeds with live visual effects, creating immersive visuals synchronized with the music and live performances.",
     "meta": "■Artists\nELFIGO / DJ RICARDO / TIM BLISS\n\n■VJ (BRDG Members)\nblock m / Keijiro Takahashi / JACKSON kaki / Kuugaze",
-    "embed": { "type": "youtube", "id": "sn4ctgOB_QE" },
-    "embedThumb": "images/vidthumb_zerofes.jpg"
+    "embed": {
+      "type": "youtube",
+      "id": "sn4ctgOB_QE"
+    },
+    "embedThumb": "images/vidthumb_zerofes.jpg",
+    "images": [
+      "images/zerofes_1.jpg"
+    ]
   },
   {
     "key": "alexandros",
@@ -35,8 +54,11 @@
     "jp": "2016年～2025年まで[Alexandros]のライブパフォーマンスにおいて各公演のコンセプトに沿ったVJシステムの開発。\nUnrealEngine、Unity、TouchDesignerといったリアルタイムビジュアルプログラミング環境やゲームエンジンを活用し、バンドの音楽性や公演のテーマに沿ったビジュアルエフェクトを設計・実装しました。",
     "en": "I have been developing customized VJ systems for live performances by the renowned Japanese band [Alexandros], tailored to the unique concept of each show.\nUtilizing real-time visual programming environments such as UnrealEngine and Unity and TouchDesigner, I design and implement original visual effects that reflect the band's musical style and thematic direction.\nThese systems enable immersive stage experiences where music and visuals are seamlessly integrated, enhancing the expressive power of the artists on stage.",
     "heading2": "credits",
-    "meta": "2025 ■15th Anniversary VIP PARTY '25 / THIS FES '25 in Sagamihara / PROVOKE ASIA TOUR 2025 / ROCK IN JAPAN FESTIVAL 2025 / PROVOKE JAPAN TOUR 2025\n2024 ■Yoohei Kawakami's #room665 / THIS FES '24 in Sagamihara / ROCK IN JAPAN FESTIVAL 2024 / Beijing Super Strawberry Music Festival (China) / METROCK 2024\n2022 ■But wait, Tour? 2022\n2021 ■ALEATORIC TOMATO Tour 2021\n2020 ■Where's My Tomato? Tour\n2019 ■Sleepless in Japan Tour\n2018 ■Sleepless in Japan Tour / VIP PARTY 2018 at ZOZO MARINE STADIUM\n2017 ■Tour 2016～2017 ～We Come In Peace～ (幕張メッセ)\n2016 ■Tour 2016～2017 ～We Come In Peace～ (横浜アリーナ)\n\n各公演でVJシステムの開発・提供、ライブ映像演出制作、現場でのVJプレイを担当。",
-    "images": ["images/alexandros_1.jpg","images/alexandros_2.jpg"]
+    "meta": "2025\n■15th Anniversary VIP PARTY '25\nCreated live visual content for concert performances (ライブ映像演出制作)\nDeveloped and Provided VJ Systems (VJシステム開発、提供)\n■THIS FES '25 in Sagamihara\nCreated live visual content for concert performances (ライブ映像演出制作)\nDeveloped and Provided VJ Systems (VJシステム開発、提供)\n■PROVOKE ASIA TOUR 2025\nCreated live visual content for concert performances (ライブ映像演出制作)\n■ROCK IN JAPAN FESTIVAL 2025\nCreated live visual content for concert performances (ライブ映像演出制作)\n■PROVOKE JAPAN TOUR 2025\nCreated live visual content for concert performances (ライブ映像演出制作)\n\n2024\n■Yoohei Kawakami's #room665\nDeveloped and Provided VJ Systems (VJシステム開発、提供)\nLive VJ Performance (現場でのVJプレイ_新宿 THEATER MILANO-Za)\n■THIS FES '24 in Sagamihara\nCreated live visual content for concert performances (ライブ映像演出制作)\nDeveloped and Provided VJ Systems (VJシステム開発、提供)\n■ROCK IN JAPAN FESTIVAL 2024\nCreated live visual content for concert performances (ライブ映像演出制作)\n■Beijing Super Strawberry Music Festival in China 北京超級草苺音楽祭 (中国)\nCreated live visual content for concert performances (ライブ映像演出制作)\n■METROCK 2024\nCreated live visual content for concert performances (ライブ映像演出制作)\n\n2022\n■But wait,Tour? 2022\nDeveloped and Provided VJ Systems (全国ツアー_VJシステム開発、提供)\n\n2021\n■ALEATORIC TOMATO Tour 2021\nLive VJ Performance (現場でのVJプレイ_仙台GIGS)\nCreated live visual content for concert performances (ライブ映像演出制作)\nDeveloped and Provided VJ Systems (全国ツアー_VJシステム開発、提供)\n\n2020\n■Where's My Tomato? Tour\nDeveloped and Provided VJ Systems (全国ツアー_VJシステム開発、提供)\n\n2019\n■Sleepless in Japan Tour\nDeveloped and Provided VJ Systems (全国ツアー_VJシステム開発、提供)\nLive VJ Performance (現場でのVJプレイ_幕張メッセ)\n\n2018\n■Sleepless in Japan Tour\n■VIP PARTY 2018 at ZOZO MARINE STADIUM\nCreated live visual content for concert performances (ライブ映像演出制作)\nDeveloped and Provided VJ Systems (ZOZOマリンスタジアム_VJシステム開発、提供)\nLive VJ Performance (現場でのVJプレイ_ZOZOマリンスタジアム)\n\n2017\n■Tour 2016～2017 ～We Come In Peace～\nDeveloped and Provided VJ Systems (幕張メッセ_VJシステム開発、提供)\nLive VJ Performance (現場でのVJプレイ_幕張メッセ)\n\n2016\n■Tour 2016～2017 ～We Come In Peace～\nDeveloped and Provided VJ Systems (横浜アリーナ_VJシステム開発、提供)\nLive VJ Performance (現場でのVJプレイ_横浜アリーナ)",
+    "images": [
+      "images/alexandros_1.jpg",
+      "images/alexandros_2.jpg"
+    ]
   },
   {
     "key": "valis1",
@@ -44,11 +66,19 @@
     "category": "【MV】VALIS",
     "title": "「物換星移カタルシス」",
     "subtitle": "VALIS「物換星移カタルシス」",
-    "jp": "■Music\nMusic, Arrangement：TeddyLoid & Giga\nLyrics：TeddyLoid\nMix： TeddyLoid & Giga at Delta Networks Studio\n\n■Movie\nDirector：Yukinomitama (Kuugaze)\nTypograhy：Hiiragi Tuduri\nMotion Typography：koshi-kun\nChoreography：NON（ELEVENPLAY）\nAvatar Design：ねこ助\n\n■担当箇所\n「監督」「3DCG」「フル尺コンポジット」「フル尺編集」\n\n■コメント\nVALISのメンバーが生きる幻想都市「深脊界市」を舞台に、壮大なステージ演出と象徴的なビジュアルで構成された映像作品です。\n楽曲に散りばめられた蝶をモチーフとした歌詞をもとに、蝶の成長とVALISの成長を重ね合わせた構成を展開。\nメインモチーフには黒アゲハと彼岸花を選定。黒アゲハの成長を象徴する場面に、「転生」という花言葉を持つ彼岸花を配することで、視覚的な印象と作品全体のテーマ性を高めています。",
-    "en": "■Music\nMusic, Arrangement: TeddyLoid & Giga\nLyrics: TeddyLoid\nMixing: TeddyLoid & Giga at Delta Networks Studio\n\n■Movie\nDirector: Yukinomitama (Kuugaze)\nTypography: Hiiragi Tuduri\nMotion Typography: koshi-kun\nChoreography: NON (ELEVENPLAY)\nAvatar Design: Nekosuke\n\n■Roles\nDirector, 3DCG, Full-Length Compositing, Full-Length Editing\n\n■Comment\nSet in the fantastical city of Shinsekikai-shi, where the members of VALIS reside, this video project is composed of grand stage visuals and symbolic imagery. Drawing inspiration from the butterfly motif woven throughout the lyrics, the narrative parallels the metamorphosis of a butterfly with the growth of VALIS.",
-    "embed": { "type": "youtube", "id": "cBXmDftd0Mk" },
+    "jp": "■Music\nMusic, Arrangement：TeddyLoid & Giga\nLyrics：TeddyLoid\nMix： TeddyLoid & Giga at Delta Networks Studio\n\n■Movie\nDirector：Yukinomitama (Kuugaze)\nTypograhy：Hiiragi Tuduri\nMotion Typography：koshi-kun\nChoreography：NON（ELEVENPLAY）\nAvatar Design：ねこ助\n\n■担当箇所\n「監督」「3DCG」「フル尺コンポジット」「フル尺編集」\n\n■コメント\nVALISのメンバーが生きる幻想都市「深脊界市」を舞台に、壮大なステージ演出と象徴的なビジュアルで構成された映像作品です。\n楽曲に散りばめられた蝶をモチーフとした歌詞をもとに、蝶の成長とVALISの成長を重ね合わせた構成を展開。\nメインモチーフには黒アゲハと彼岸花を選定。黒アゲハの成長を象徴する場面に、「転生」という花言葉を持つ彼岸花を配することで、視覚的な印象と作品全体のテーマ性を高めています。\n蝶と花の関係性を軸に、進化・変化といったテーマをビジュアルに落とし込んだ作品です。",
+    "en": "■Music\nMusic, Arrangement: TeddyLoid & Giga\nLyrics: TeddyLoid\nMixing: TeddyLoid & Giga at Delta Networks Studio\n\n■Movie\nDirector: Yukinomitama (Kuugaze)\nTypography: Hiiragi Tuduri\nMotion Typography: koshi-kun\nChoreography: NON (ELEVENPLAY)\nAvatar Design: Nekosuke\n\n■Roles\nDirector, 3DCG, Full-Length Compositing, Full-Length Editing\n\n■Comment\nSet in the fantastical city of Shinsekikai-shi, where the members of VALIS reside, this video project is composed of grand stage visuals and symbolic imagery.\nDrawing inspiration from the butterfly motif woven throughout the lyrics, the narrative parallels the metamorphosis of a butterfly with the growth of VALIS. The primary visual symbols are the black swallowtail butterfly and red spider lilies. By pairing the butterfly's transformation with the spider lily—whose symbolic meaning is \"rebirth\"—the visuals enhance both the emotional impact and thematic depth of the piece.\nCentering on the relationship between the butterfly and the flower, the work visualizes themes of evolution, change, and spiritual renewal.",
+    "embed": {
+      "type": "youtube",
+      "id": "cBXmDftd0Mk"
+    },
     "embedThumb": "images/vidthumb_valis1.jpg",
-    "images": ["images/valis1_1.jpg","images/valis1_2.jpg","images/valis1_3.jpg","images/valis1_4.jpg","images/valis1_5.jpg"]
+    "images": [
+      "images/valis1_1.jpg",
+      "images/valis1_2.jpg",
+      "images/valis1_3.jpg",
+      "images/valis1_4.jpg"
+    ]
   },
   {
     "key": "valis2",
@@ -56,11 +86,22 @@
     "category": "【MV】VALIS",
     "title": "「超常現象ダンスダンス」",
     "subtitle": "VALIS「超常現象ダンスダンス」",
-    "jp": "■Music\nLyrics, Music, Arrangement：かいりきベア\nMix：山下智輝\n\n■Movie\nDirector：Yukinomitama (Kuugaze)\nDesign/Typography：本忠学\nChoreography：NON（ELEVENPLAY）\n3D Model：WACHAJACK, ModelingCafe\nMotion Capture：SPICE\nAvatar Design：ねこ助\n\n■担当箇所\n「監督」「3DCG」「フル尺コンポジット」「フル尺編集」\n\n■コメント\nVALISのメンバーが抱える\"闇\"は、ネズミのソートによって特殊な力で増幅されていきます。\n闇の力が強まることで彼女たちは特殊能力を得る一方で、人間性を徐々に失っていくという代償を抱えます。\nその葛藤や内面の揺らぎを、陰と陽というテーマを軸に制作しました。\nアニメ作品の『少女革命ウテナ』や『魔法少女まどか☆マギカ』へのリスペクトを込めつつ、その世界観や演出のエッセンスを参考に映像に取り入れています。",
-    "en": "■Music\nLyrics, Music, Arrangement: Kairiki Bear\nMixing: Tomoki Yamashita\n\n■Movie\nDirector: Yukinomitama (Kuugaze)\nDesign/Typography: Manabu Motochika\nChoreography: NON (ELEVENPLAY)\n3D Model: WACHAJACK, ModelingCafe\nMotion Capture: SPICE\nAvatar Design: Nekosuke\n\n■Roles\nDirector, 3DCG, Full-Length Compositing, Full-Length Editing\n\n■Comment\nThe \"darkness\" each member of VALIS carries is amplified by a mysterious force known as the Rat Sort, granting them supernatural powers at the cost of slowly losing their humanity. Inspired by anime works such as Revolutionary Girl Utena and Puella Magi Madoka Magica, I incorporated elements from their unique visual styles into the direction and world-building.",
-    "embed": { "type": "youtube", "id": "K3SScfB83kc" },
+    "jp": "■Music\nLyrics, Music, Arrangement：かいりきベア\nMix：山下智輝\n\n■Movie\nDirector：Yukinomitama (Kuugaze)\nDesign/Typography：本忠学\nChoreography：NON（ELEVENPLAY）\n3D Model：WACHAJACK, ModelingCafe\nMotion Capture：SPICE\nAvatar Design ねこ助\n\n■担当箇所\n「監督」「3DCG」「フル尺コンポジット」「フル尺編集」\n\n■コメント\nVALISのメンバーが抱える葛藤や内面の揺らぎを、陰と陽というテーマを軸に制作しました。\nアニメ作品の『少女革命ウテナ』や『魔法少女まどか☆マギカ』へのリスペクトを込めつつ、その世界観や演出のエッセンスを参考に映像に取り入れています。",
+    "en": "■Music\nLyrics, Music, Arrangement: Kairiki Bear\nMixing: Tomoki Yamashita\n\n■Movie\nDirector: Yukinomitama (Kuugaze)\nDesign/Typography: Manabu Motochika\nChoreography: NON (ELEVENPLAY)\n3D Model: WACHAJACK, ModelingCafe\nMotion Capture: SPICE\nAvatar Design: Nekosuke\n\n■Roles\nDirector, 3DCG, Full-Length Compositing, Full-Length Editing\n\n■Comment\nThis piece explores the inner conflicts and emotional struggles of the members of VALIS through the theme of light and shadow.\nInspired by the worlds of Revolutionary Girl Utena and Puella Magi Madoka Magica, the video pays homage to these iconic anime works by incorporating elements of their visual language, atmosphere, and storytelling into its direction.",
+    "embed": {
+      "type": "youtube",
+      "id": "K3SScfB83kc"
+    },
     "embedThumb": "images/vidthumb_valis2.jpg",
-    "images": ["images/valis2_1.jpg","images/valis2_2.jpg","images/valis2_3.jpg","images/valis2_4.jpg","images/valis2_5.jpg","images/valis2_6.jpg","images/valis2_7.jpg"]
+    "images": [
+      "images/valis2_1.jpg",
+      "images/valis2_2.jpg",
+      "images/valis2_3.jpg",
+      "images/valis2_4.jpg",
+      "images/valis2_5.jpg",
+      "images/valis2_6.jpg",
+      "images/valis2_7.jpg"
+    ]
   },
   {
     "key": "grisaia1",
@@ -70,7 +111,11 @@
     "subtitle": "映画 グリザイアファントムトリガー THE ANIMATION エンディング",
     "jp": "■担当箇所\n「3DCG」「画作り」「演出」「フル尺コンポジット」「フル尺編集」\n\n■コメント\n2019年に公開されたアニメ映画『グリザイア：ファントムトリガー THE ANIMATION』のエンディングにて、演出・3DCG・コンポジット・編集を担当しました。\nエンディングテーマ「サヨナラの惑星」が持つ\"静かな喪失感\"と\"未来への祈り\"というテーマに寄り添い、映像では\"広大な夜空\"と\"星の流れ\"をモチーフにした演出を行いました。浮遊感のある宇宙的な空間に、疾走する流れ星を重ねることで、止まった時の中をそれでも前に進もうとする意志を象徴的に描いています。",
     "en": "■Roles\n3DCG, Art Direction, Direction, Full-Length Compositing, Full-Length Editing\n\n■Comment\nI was in charge of direction, 3DCG, compositing, and editing for the ending sequence of the 2019 anime film Grisaia: Phantom Trigger THE ANIMATION. The ending theme, \"Sayonara no Wakusei\" (Planet of Farewell), carries themes of quiet sorrow and a prayer for the future — expressed through motifs of a vast night sky and flowing stars.",
-    "images": ["images/grisaia1_1.jpg","images/grisaia1_2.jpg","images/grisaia1_3.jpg"]
+    "images": [
+      "images/grisaia1_1.jpg",
+      "images/grisaia1_2.jpg",
+      "images/grisaia1_3.jpg"
+    ]
   },
   {
     "key": "grisaia2",
@@ -80,7 +125,11 @@
     "subtitle": "映画 グリザイアファントムトリガー THE ANIMATION スターゲイザー エンディング",
     "jp": "■担当箇所\n「3DCG」「画作り」「演出」「フル尺コンポジット」「フル尺編集」\n\n■コメント\n2020年に公開された劇場版アニメ『グリザイア：ファントムトリガー THE ANIMATION スターゲイザー』のエンディングにて、演出・3DCG・コンポジット・編集を担当致しました。\n本作のエンディング映像では、トーカの「喪失」と「再生」という感情の旅を、光や桜、惑星といった象徴的なモチーフを用いて描いています。\n中盤では、シホを象徴する惑星が登場し、トーカが大切な記憶と向き合う様子を描いています。そして物語の終盤、トーカは喪失を受け入れ、過去を乗り越え、新たな希望の光へと歩み出します。",
     "en": "■Roles\n3DCG, Art Direction, Direction, Full-Length Compositing, Full-Length Editing\n\n■Comment\nI was responsible for the direction, 3DCG, compositing, and editing of the ending sequence for the 2020 theatrical anime Grisaia: Phantom Trigger THE ANIMATION Stargazer, visually depicting Tohka's emotional journey of \"loss\" and \"rebirth\" through symbolic motifs such as light, cherry blossoms, and planets.",
-    "images": ["images/grisaia2_1.jpg","images/grisaia2_2.jpg","images/grisaia2_3.jpg"]
+    "images": [
+      "images/grisaia2_1.jpg",
+      "images/grisaia2_2.jpg",
+      "images/grisaia2_3.jpg"
+    ]
   },
   {
     "key": "hairi",
@@ -90,9 +139,19 @@
     "subtitle": "花譜「戸惑いテレパシー羽生まゐごRemix」",
     "jp": "■Music\n作詞・作曲：カンザキイオリ\nRemix：羽生まゐご\n\n■Movie\nDirector：佐伯雄一郎\nCG：Yukinomitama (Kuugaze)\nIllustration：chamooi\nTypography：本忠学\n\n■担当箇所\n「背景デザイン」「3DCG」「カメラ」「コンポジット」\n\n■コメント\nエッシャーにインスパイアされた錯視的な背景デザインを取り入れ、現実と幻想が交差する空間を描き出しました。",
     "en": "■Music\nLyrics, Composition: Iori Kanzaki\nRemix: Maigo Hanyu\n\n■Movie\nDirector: Yuichiro Saeki\nCG: Yukinomitama (Kuugaze)\nIllustration: Chamooi\nTypography: Manabu Motochika\n\n■Roles\nBackground Design, 3DCG, Camera, Compositing\n\n■Comment\nInspired by M.C. Escher, I incorporated illusionary background designs to create a space where reality and fantasy intersect.",
-    "embed": { "type": "youtube", "id": "2Ku9y-IUuW0" },
+    "embed": {
+      "type": "youtube",
+      "id": "2Ku9y-IUuW0"
+    },
     "embedThumb": "images/vidthumb_hairi.jpg",
-    "images": ["images/hairi_1.jpg","images/hairi_2.jpg","images/hairi_3.jpg","images/hairi_4.jpg","images/hairi_5.jpg","images/hairi_6.jpg"]
+    "images": [
+      "images/hairi_1.jpg",
+      "images/hairi_2.jpg",
+      "images/hairi_3.jpg",
+      "images/hairi_4.jpg",
+      "images/hairi_5.jpg",
+      "images/hairi_6.jpg"
+    ]
   },
   {
     "key": "vrchat",
@@ -100,17 +159,54 @@
     "category": "【VRChat】",
     "title": "VRChat Avatar 「ゆきたまちゃん」",
     "subtitle": "フルスクラッチVRChat対応アバター「ゆきたまちゃん」",
-    "jp": "自主制作 / バーチャルマーケット2出展 / BOOTHにて販売中：https://yukinomitama.booth.pm/\n3D Viewer：https://hub.vroid.com/characters/6126013276966196803/models/689798066880797622\n\n■担当箇所\n「キャラクターデザイン」「モデリング」「リギング」「テクスチャ」「Unityセッティング」\n\n■Yukinomitamaとは\n私は2016年、HTC Viveの登場をきっかけにVRの世界に没入し、以降、仮想空間における表現と存在の可能性を探求してきました。\n2017年から2018年にかけて、VRChat黎明期に「バーチャル空間を\"主たる現実\"として生きる」というテーマを掲げた個人プロジェクトを実施。そこで自らの分身＝\"分霊\"として構想・制作したのが、オリジナルアバター「Yukinomitama」です。\n男の娘をモチーフに、ジェンダー表現とバーチャル・アイデンティティの拡張を試みたものであり、股間にシェイプキーを搭載した、世界初のVRChatアバターでもあります。\n\n■X\nhttps://x.com/yukinomitama",
-    "en": "Independently created. Exhibited at Virtual Market 2. Available on BOOTH: https://yukinomitama.booth.pm/\n3D Viewer: https://hub.vroid.com/characters/6126013276966196803/models/689798066880797622\n\n■Roles\nCharacter Design, Modeling, Rigging, Texturing, Unity Setup\n\n■What is Yukinomitama?\nIn 2016, inspired by the release of the HTC Vive, I immersed myself in VR and began exploring expression and existence within virtual spaces. During the early days of VRChat (2017–2018) I created Yukinomitama — an original avatar and \"divided spirit\" of myself, drawing on the \"otokonoko\" motif to explore gender expression and virtual identity. It is also recognized as the world's first VRChat avatar equipped with a shapekey for genital deformation.\n\n■X\nhttps://x.com/yukinomitama"
+    "jp": "自主制作 / バーチャルマーケット2出展 / BOOTHにて販売中：https://yukinomitama.booth.pm/\n3D Viewer：https://hub.vroid.com/characters/6126013276966196803/models/689798066880797622\n\n■担当箇所\n「キャラクターデザイン」「モデリング」「リギング」「テクスチャ」「Unityセッティング」\n\n■Yukinomitamaとは\n私は2016年、HTC Viveの登場をきっかけにVRの世界に没入し、以降、仮想空間における表現と存在の可能性を探求してきました。\n2017年から2018年にかけて、VRChat黎明期に「バーチャル空間を“主たる現実”として生きる」というテーマを掲げた個人プロジェクトを実施。そこで自らの分身＝“分霊”として構想・制作したのが、オリジナルアバター「Yukinomitama」です。\n男の娘をモチーフに、ジェンダー表現とバーチャル・アイデンティティの拡張を試みたものであり、股間にシェイプキーを搭載した、世界初のVRChatアバターでもあります。\n「Yukinomitama」は、単なるデジタルキャラクターではなく、私自身の意識の一部を投影する“インスタンス”としての自己です。アバターをインスタンス化するという行為を通じて、私は「自己の複数性」や「存在の選択可能性」に向き合いました。身体構造のリアルタイム変形という技術的アプローチを通じて、現実世界とは異なる「自己の形」や「存在の自由」を問いかけ、バーチャル空間における“生”と“自我”の再構築を試みたプロジェクトです。\n\n■X\nhttps://x.com/yukinomitama",
+    "en": "Independently created. Exhibited at Virtual Market 2. Available on BOOTH: https://yukinomitama.booth.pm/\n3D Viewer: https://hub.vroid.com/characters/6126013276966196803/models/689798066880797622\n\n■Roles\nCharacter Design, Modeling, Rigging, Texturing, Unity Setup\n\n■What is Yukinomitama?\nIn 2016, inspired by the release of the HTC Vive, I immersed myself in VR and began exploring expression and existence within virtual spaces. During the early days of VRChat (2017–2018) I created Yukinomitama — an original avatar and \"divided spirit\" of myself, drawing on the \"otokonoko\" motif to explore gender expression and virtual identity. It is also recognized as the world's first VRChat avatar equipped with a shapekey for genital deformation.\nYukinomitama is not merely a digital character, but a projection of part of my own consciousness — a self as \"instance.\" Through the act of instantiating an avatar, I confronted the plurality of self and the possibility of choosing one's own existence. Through the technical approach of real-time body morphing, this project questions a \"form of self\" and \"freedom of existence\" distinct from the physical world, attempting to reconstruct \"life\" and \"self\" within virtual space.\n\n■X\nhttps://x.com/yukinomitama",
+    "images": [
+      "images/vrchat_1.jpg"
+    ]
   },
   {
-    "key": "lab",
-    "thumb": "images/lab.jpg",
-    "category": "【Lab】",
-    "title": "Experiments on generating digital humans using AI",
-    "subtitle": "Experimenting with highly customizable AI digital human generation using ComfyUI",
-    "jp": "「ComfyUI」を用いて、画像生成AI「Stable Diffusion」を制御し、極めて精密かつ自在にカスタマイズ可能なAIデジタルヒューマンの生成実験を行っています。",
-    "en": "Using \"ComfyUI,\" we are controlling the image generation AI \"Stable Diffusion\" and conducting experiments to generate highly precise and freely customizable AI digital humans.",
-    "images": ["images/lab_1.jpg","images/lab_2.jpg","images/lab_3.jpg","images/lab_4.jpg"]
+    "key": "tokimonsta",
+    "thumb": "images/tokimonsta.jpg",
+    "category": "【VJ】",
+    "title": "TOKiMONSTA@SUMMER SONIC 2019",
+    "subtitle": "Live VJ for TOKiMONSTA  @SUMMER SONIC 2019",
+    "jp": "「SUMMER SONIC 2019」にて、TOKiMONSTAのライブVJを担当。\n東京を拠点とするオーディオビジュアルチームBRDGのメンバーとして参加。",
+    "en": "Played VJ for TOKiMONSTA's live set at \"SUMMER SONIC 2019\" as a member of Tokyo-based audiovisual collective BRDG.",
+    "meta": "■VJ (BRDG Members)\nKeijiro Takahashi / Kuugaze",
+    "images": [
+      "images/tokimonsta_1.jpg",
+      "images/tokimonsta_2.jpg"
+    ]
+  },
+  {
+    "key": "sekainoowari",
+    "thumb": "images/sekainoowari.jpg",
+    "category": "【Live Visual】",
+    "title": "SEKAI NO OWARI DOME TOUR 2026「THE CINEMA」",
+    "subtitle": "SEKAI NO OWARI DOME TOUR 2026「THE CINEMA」",
+    "jp": "■担当箇所\n「3DCG」「VFX」「画作り」「フル尺コンポジット」「フル尺編集」\n\n■コメント\n楽曲「SOS」のライブ映像を制作しました。",
+    "en": "■Roles\n3DCG / VFX / Visual Design / Full-Length Compositing / Full-Length Editing\n\n■Description\nCreated the live visual content for the song \"SOS.\""
+  },
+  {
+    "key": "sxsw2026",
+    "thumb": "images/sxsw2026.jpg",
+    "category": "【Interactive Experience】",
+    "title": "SXSW 2026 - NTT DOCOMO \"FEEL TECH\" × hololive",
+    "subtitle": "SXSW 2026 - NTT DOCOMO \"FEEL TECH\" × hololive  Immersive Live Experience",
+    "jp": "2026年3月12日〜14日にテキサスのオースティンで開催された「SXSW 2026」にて、NTTドコモの触覚共有技術「FEEL TECH」を活用したリアルタイム体験型コンテンツの映像制作を担当しました。\nVTuberグループ「ホロライブ」のライブパフォーマンスに合わせ、演者の鼓動や動作、音響振動をリスナー側の「FEEL TECH」デバイス（スピーカーと振動デバイスが一体化した触覚伝達システム）へリアルタイムに同期させる体験型コンテンツです。\n視覚・聴覚に「触覚」のフィードバックを融合させることで、VTuberの実在感を拡張します。\n\nhttps://www.moguravr.com/ntt-docomo-feel-tech-hololive-sxsw2026/",
+    "en": "At SXSW 2026, held in Austin, Texas from March 12 to 14, I was in charge of visual production for an interactive experience showcase powered by NTT DOCOMO's haptic sharing technology, \"FEEL TECH.\"\nIn sync with a live performance by the VTuber group hololive, the system transmitted the performer's heartbeat, movements, and audio vibrations in real-time to the audience's \"FEEL TECH\" hardware (an integrated system combining speakers and haptic feedback devices). By integrating touch with sight and sound, this project aims to expand the physical presence of virtual performers.\n\nhttps://www.docomo.ne.jp/english/info/media_center/pr/2026/0305_00.html"
+  },
+  {
+    "key": "elektra16",
+    "thumb": "images/elektra16.jpg",
+    "category": "【Audiovisual Showcase】",
+    "title": "ELEKTRA 16",
+    "subtitle": "Audiovisual Showcase  @ELEKTRA16",
+    "jp": "カナダ・モントリオールで開催された国際メディアアートフェスティバル「ELEKTRA」に出演。\nBRDGプロデュースによる、DUB-Russell × Kuugazeのオーディオビジュアルショーケース「BOSOZOKU」を上演しました。\n\nLineup: Byetone & Alva Noto + 伊東篤宏 (Diamond Version) / Ueno Masaaki / DUB-Russell & Kuugaze",
+    "en": "Selected to perform at ELEKTRA, the international media arts festival in Montreal, Canada.\nAs part of BRDG's program, presented BOSOZOKU, an audiovisual performance by DUB-Russell × Kuugaze.\n\nLineup: Byetone & Alva Noto (Diamond Version) with Atsuhiro Ito / Ueno Masaaki / DUB-Russell & Kuugaze",
+    "images": [
+      "images/elektra16_1.jpg"
+    ]
   }
 ]
