@@ -286,6 +286,73 @@
     .proj-subtitle{ font-size:19px; }
     .proj-gallery{ grid-template-columns:1fr; }
   }
+
+  .admin-mode .card:not(.about-card){
+    cursor:grab;
+  }
+  .admin-mode .card:not(.about-card):active{
+    cursor:grabbing;
+  }
+  .card.dragging{
+    opacity:.35;
+  }
+  .card.drag-over{
+    outline:2px dashed var(--accent);
+    outline-offset:4px;
+    border-radius:4px;
+  }
+  #adminPanel{
+    position:fixed;
+    right:16px; bottom:16px;
+    z-index:200;
+    background:var(--card-bg);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+    box-shadow:0 12px 32px rgba(0,0,0,.3);
+    width:230px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    font-size:12px;
+    color:var(--ink);
+  }
+  #adminPanel .admin-title{
+    font-weight:700;
+    font-size:13px;
+  }
+  #adminPanel .admin-desc{
+    color:var(--sub);
+    line-height:1.6;
+  }
+  #adminPanel input{
+    font-size:12px;
+    padding:7px 9px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:var(--bg);
+    color:var(--ink);
+    width:100%;
+  }
+  #adminPanel button{
+    font-size:12px;
+    font-weight:700;
+    padding:8px 9px;
+    border:none;
+    border-radius:5px;
+    background:var(--accent);
+    color:#fff;
+    cursor:pointer;
+  }
+  #adminPanel button:disabled{
+    opacity:.5;
+    cursor:default;
+  }
+  #adminStatus{
+    color:var(--sub);
+    min-height:14px;
+    line-height:1.5;
+  }
 </style>
 </head>
 <body>
@@ -329,7 +396,9 @@
     subtitle: "about",
     jp: `東京を拠点に活動するデジタルアーティスト、映像監督、3DCGジェネラリスト、VJ。
 
-近年はVirtual Live、VTuber MV、VRコンテンツ開発など、仮想空間での演出、制作に携わる傍ら、2016年から[Alexandros]のライブにて、各公演コンセプトに合わせた独自のVJシステムを開発・提供している等、現実でのインタラクティブペルソナを自在に切り替え、新たなインスピレーションを解き放ちます。`,
+近年はVirtual Live、VTuber MV、VRコンテンツ開発など、仮想空間での演出、制作に携わる傍ら、2016年から[Alexandros]のライブにて、各公演コンセプトに合わせた独自のVJシステムを開発・提供している等、現実でのインタラクティブコンテンツ開発も行う。
+
+私はクリエイターとして「Kuugaze」と「Yukinomitama」という二つの名前を持っています。作品のコンテキストに応じて、この二つのクリエイティブペルソナを自在に切り替え、新たなインスピレーションを解き放ちます。`,
     meta: `Domains of Expertise
 VFX, MotionGraphics, Compositing
 Modeling, Rigging, Texturing
@@ -405,12 +474,91 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
   overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
   window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !overlay.hidden) closeModal(); });
 
+  // --- Admin mode: drag-to-reorder (owner only) ---
+  const ADMIN_KEY = 'kuugazeadmin';
+  const isAdmin = new URLSearchParams(location.search).get(ADMIN_KEY) === '1';
+
+  function getDragAfterElement(container, x, y, dragEl){
+    const els = [...container.querySelectorAll('.card:not(.about-card)')].filter(el => el !== dragEl);
+    let closest = { el: null, dist: Infinity };
+    els.forEach(el => {
+      const box = el.getBoundingClientRect();
+      const cx = box.left + box.width / 2;
+      const cy = box.top + box.height / 2;
+      const dist = Math.hypot(x - cx, y - cy);
+      if(dist < closest.dist) closest = { el, dist, box, cx };
+    });
+    if(!closest.el) return null;
+    return (x > closest.cx) ? closest.el.nextElementSibling : closest.el;
+  }
+
+  function syncWorksOrderFromDom(){
+    const keys = [...grid.querySelectorAll('.card[data-modal]')]
+      .map(c => c.dataset.modal)
+      .filter(k => k !== 'about');
+    WORKS = keys.map(k => WORKS_BY_KEY[k]).filter(Boolean);
+  }
+
+  function enableDragReorder(){
+    document.body.classList.add('admin-mode');
+    let dragEl = null;
+    grid.querySelectorAll('.card:not(.about-card)').forEach(card => {
+      card.draggable = true;
+      card.addEventListener('dragstart', () => {
+        dragEl = card;
+        card.classList.add('dragging');
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        dragEl = null;
+        syncWorksOrderFromDom();
+      });
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if(!dragEl) return;
+        const after = getDragAfterElement(grid, e.clientX, e.clientY, dragEl);
+        if(after == null) grid.appendChild(dragEl);
+        else grid.insertBefore(dragEl, after);
+      });
+    });
+  }
+
+  function buildAdminPanel(){
+    const panel = document.createElement('div');
+    panel.id = 'adminPanel';
+    panel.innerHTML = `
+      <div class="admin-title">管理者モード</div>
+      <div class="admin-desc">カードをドラッグして並び替えたら、ボタンで新しい順番をコピーして、そのままClaudeとのチャットに貼り付けて送ってください。反映しておきます。</div>
+      <button id="adminCopyBtn">新しい順番をコピー</button>
+      <div id="adminStatus"></div>
+    `;
+    document.body.appendChild(panel);
+
+    const copyBtn = panel.querySelector('#adminCopyBtn');
+    const status = panel.querySelector('#adminStatus');
+    copyBtn.addEventListener('click', async () => {
+      syncWorksOrderFromDom();
+      const order = WORKS.map(w => w.key);
+      const text = JSON.stringify(order);
+      try{
+        await navigator.clipboard.writeText(text);
+        status.textContent = 'コピーしました。Claudeに貼り付けて送ってください。';
+      }catch(err){
+        status.textContent = text;
+      }
+    });
+  }
+
   fetch('works.json')
     .then(r => r.json())
     .then(works => {
       WORKS = works;
       WORKS_BY_KEY = Object.fromEntries(works.map(w => [w.key, w]));
       grid.insertAdjacentHTML('beforeend', works.map(cardHtml).join(''));
+      if(isAdmin){
+        enableDragReorder();
+        buildAdminPanel();
+      }
     })
     .catch(err => {
       console.error('Failed to load works.json', err);
