@@ -310,7 +310,9 @@
     border-radius:10px;
     padding:14px 16px;
     box-shadow:0 12px 32px rgba(0,0,0,.3);
-    width:230px;
+    width:250px;
+    max-height:calc(100vh - 32px);
+    overflow-y:auto;
     display:flex;
     flex-direction:column;
     gap:8px;
@@ -325,7 +327,13 @@
     color:var(--sub);
     line-height:1.6;
   }
-  #adminPanel input{
+  #adminPanel .admin-divider{
+    border:none;
+    border-top:1px solid var(--line);
+    margin:4px 0;
+  }
+  #adminPanel input,
+  #adminPanel textarea{
     font-size:12px;
     padding:7px 9px;
     border:1px solid var(--line);
@@ -333,7 +341,9 @@
     background:var(--bg);
     color:var(--ink);
     width:100%;
+    font-family:inherit;
   }
+  #adminPanel textarea{ resize:vertical; }
   #adminPanel button{
     font-size:12px;
     font-weight:700;
@@ -348,10 +358,36 @@
     opacity:.5;
     cursor:default;
   }
-  #adminStatus{
+  #adminStatus, #adminAddStatus{
     color:var(--sub);
     min-height:14px;
     line-height:1.5;
+  }
+  .hide-toggle-btn{
+    position:absolute;
+    top:6px; right:6px;
+    z-index:5;
+    font-size:10px;
+    padding:4px 7px;
+    border:none;
+    border-radius:4px;
+    background:rgba(0,0,0,.65);
+    color:#fff;
+    cursor:pointer;
+  }
+  .card.is-hidden .thumb img{
+    opacity:.35;
+  }
+  .hidden-badge{
+    display:inline-block;
+    margin-left:6px;
+    font-size:10px;
+    font-weight:700;
+    color:#fff;
+    background:#b33;
+    padding:1px 6px;
+    border-radius:3px;
+    vertical-align:middle;
   }
 </style>
 </head>
@@ -398,7 +434,7 @@
 
 近年はVirtual Live、VTuber MV、VRコンテンツ開発など、仮想空間での演出、制作に携わる傍ら、2016年から[Alexandros]のライブにて、各公演コンセプトに合わせた独自のVJシステムを開発・提供している等、現実でのインタラクティブコンテンツ開発も行う。
 
-私はクリエイターとして「Kuugaze」と「Yukinomitama」という二つの名前を持っています。作品のコンテキストに応じて、この二つのクリエイティブペルソナを自在に切り替え、新たなインスピレーションを解き放ちます。`,
+私はクリエイターとして「Kuugaze」と「Yukinomitama」という二つの名前を持っています。作品のコンテキストに応じて、この二つのクリエイティブペルソナを自在に切り替え、新たなインスピーションを解き放ちます。`,
     meta: `Domains of Expertise
 VFX, MotionGraphics, Compositing
 Modeling, Rigging, Texturing
@@ -421,10 +457,15 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     esc = esc.replace(/^■.*$/gm, '<strong>$&</strong>');
     return esc;
   }
-  function cardHtml(work){
-    return `<div class="card" data-modal="${work.key}">`
-      + `<div class="thumb"><img src="${work.thumb}" alt="" loading="lazy"></div>`
-      + `<div class="caption"><span class="cap-label">${escapeHtml(work.category || '')}</span><span class="cap-title">${escapeHtml(work.title || '')}</span></div>`
+  function cardHtml(work, isAdminCard){
+    const hiddenClass = (isAdminCard && work.hidden) ? ' is-hidden' : '';
+    const toggleBtn = isAdminCard
+      ? `<button type="button" class="hide-toggle-btn" data-key="${work.key}">${work.hidden ? '表示する' : '非公開にする'}</button>`
+      : '';
+    const hiddenBadge = (isAdminCard && work.hidden) ? '<span class="hidden-badge">非公開</span>' : '';
+    return `<div class="card${hiddenClass}" data-modal="${work.key}">`
+      + `<div class="thumb">${toggleBtn}<img src="${work.thumb}" alt="" loading="lazy"></div>`
+      + `<div class="caption"><span class="cap-label">${escapeHtml(work.category || '')}</span><span class="cap-title">${escapeHtml(work.title || '')}</span>${hiddenBadge}</div>`
       + `</div>`;
   }
   function embedHtml(work){
@@ -523,14 +564,75 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     });
   }
 
+  function enableHideToggle(){
+    grid.querySelectorAll('.hide-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const key = btn.dataset.key;
+        const w = WORKS_BY_KEY[key];
+        if(!w) return;
+        w.hidden = !w.hidden;
+        const card = btn.closest('.card');
+        card.classList.toggle('is-hidden', !!w.hidden);
+        btn.textContent = w.hidden ? '表示する' : '非公開にする';
+        const caption = card.querySelector('.caption');
+        const existingBadge = caption.querySelector('.hidden-badge');
+        if(w.hidden && !existingBadge){
+          const badge = document.createElement('span');
+          badge.className = 'hidden-badge';
+          badge.textContent = '非公開';
+          caption.appendChild(badge);
+        }else if(!w.hidden && existingBadge){
+          existingBadge.remove();
+        }
+      });
+    });
+  }
+
+  function wireAddWorkForm(panel){
+    const catI = panel.querySelector('#newCategory');
+    const titleI = panel.querySelector('#newTitle');
+    const subI = panel.querySelector('#newSubtitle');
+    const jpI = panel.querySelector('#newJp');
+    const btn = panel.querySelector('#adminAddCopyBtn');
+    const status = panel.querySelector('#adminAddStatus');
+    btn.addEventListener('click', async () => {
+      const title = titleI.value.trim();
+      if(!title){ status.textContent = 'タイトルを入力してください'; return; }
+      const data = {
+        category: catI.value.trim(),
+        title,
+        subtitle: subI.value.trim(),
+        jp: jpI.value.trim()
+      };
+      const text = JSON.stringify(data, null, 2);
+      try{
+        await navigator.clipboard.writeText(text);
+        status.textContent = 'コピーしました。サムネイル画像も添えてClaudeに貼り付けて送ってください。';
+      }catch(err){
+        status.textContent = text;
+      }
+    });
+  }
+
   function buildAdminPanel(){
     const panel = document.createElement('div');
     panel.id = 'adminPanel';
     panel.innerHTML = `
       <div class="admin-title">管理者モード</div>
-      <div class="admin-desc">カードをドラッグして並び替えたら、ボタンで新しい順番をコピーして、そのままClaudeとのチャットに貼り付けて送ってください。反映しておきます。</div>
-      <button id="adminCopyBtn">新しい順番をコピー</button>
+      <div class="admin-desc">カードをドラッグして並び替え、右上のボタンで公開・非公開を切り替えられます。変更したらボタンでコピーして、そのままClaudeとのチャットに貼り付けて送ってください。反映しておきます。</div>
+      <button id="adminCopyBtn">変更をコピー</button>
       <div id="adminStatus"></div>
+      <hr class="admin-divider">
+      <div class="admin-title">作品を追加</div>
+      <div class="admin-desc">項目を入力してコピーし、サムネイル画像を添えてClaudeに送ってください。</div>
+      <input type="text" id="newCategory" placeholder="カテゴリ（例: Music Video）">
+      <input type="text" id="newTitle" placeholder="タイトル（必須）">
+      <input type="text" id="newSubtitle" placeholder="サブタイトル">
+      <textarea id="newJp" placeholder="本文（日本語）" rows="3"></textarea>
+      <button id="adminAddCopyBtn">この内容をコピー</button>
+      <div id="adminAddStatus"></div>
     `;
     document.body.appendChild(panel);
 
@@ -539,7 +641,8 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     copyBtn.addEventListener('click', async () => {
       syncWorksOrderFromDom();
       const order = WORKS.map(w => w.key);
-      const text = JSON.stringify(order);
+      const hidden = WORKS.filter(w => w.hidden).map(w => w.key);
+      const text = JSON.stringify({ order, hidden });
       try{
         await navigator.clipboard.writeText(text);
         status.textContent = 'コピーしました。Claudeに貼り付けて送ってください。';
@@ -547,6 +650,8 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
         status.textContent = text;
       }
     });
+
+    wireAddWorkForm(panel);
   }
 
   fetch('works.json')
@@ -554,9 +659,11 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     .then(works => {
       WORKS = works;
       WORKS_BY_KEY = Object.fromEntries(works.map(w => [w.key, w]));
-      grid.insertAdjacentHTML('beforeend', works.map(cardHtml).join(''));
+      const visibleWorks = isAdmin ? works : works.filter(w => !w.hidden);
+      grid.insertAdjacentHTML('beforeend', visibleWorks.map(w => cardHtml(w, isAdmin)).join(''));
       if(isAdmin){
         enableDragReorder();
+        enableHideToggle();
         buildAdminPanel();
       }
     })
