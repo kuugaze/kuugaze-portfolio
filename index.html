@@ -206,33 +206,9 @@
     width:100%;
     height:fit-content;
     border-radius:8px;
-    padding:64px 44px 48px;
+    padding:40px 44px 48px;
     position:relative;
     box-shadow:0 24px 70px rgba(0,0,0,.45);
-  }
-  .modal .close{
-    position:absolute;
-    top:10px; left:10px;
-    width:44px;
-    height:44px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    font-size:24px;
-    color:var(--sub);
-    line-height:1;
-    background:var(--card-bg);
-    border:1px solid var(--line);
-    border-radius:50%;
-    box-shadow:0 2px 10px rgba(0,0,0,.18);
-    z-index:3;
-    transition:background .15s ease, color .15s ease;
-  }
-  .modal .close:hover,
-  .modal .close:active{
-    background:var(--line);
-    color:var(--ink);
   }
   .proj-subtitle{
     font-style:italic;
@@ -305,7 +281,8 @@
     border-radius:2px;
   }
   @media (max-width:600px){
-    .modal{ padding:58px 20px 36px; }
+    .modal-overlay{ padding:48px 32px; }
+    .modal{ padding:30px 20px 36px; }
     .proj-subtitle{ font-size:19px; }
     .proj-gallery{ grid-template-columns:1fr; }
   }
@@ -343,7 +320,6 @@
 
 <div class="modal-overlay" id="modalOverlay" hidden>
   <div class="modal">
-    <button class="close" id="modalClose">×</button>
     <div id="modalBody"></div>
   </div>
 </div>
@@ -353,9 +329,7 @@
     subtitle: "about",
     jp: `東京を拠点に活動するデジタルアーティスト、映像監督、3DCGジェネラリスト、VJ。
 
-近年はVirtual Live、VTuber MV、VRコンテンツ開発など、仮想空間での演出、制作に携わる傍ら、2016年から[Alexandros]のライブにて、各公演コンセプトに合わせた独自のVJシステムを開発・提供している等、現実でのインタラクティブコンテンツ開発も行う。
-
-私はクリエイターとして「Kuugaze」と「Yukinomitama」という二つの名前を持っています。作品のコンテキストに応じて、この二つのクリエイティブペルソナを自在に切り替え、新たなインスピレーションを解き放ちます。`,
+近年はVirtual Live、VTuber MV、VRコンテンツ開発など、仮想空間での演出、制作に携わる傍ら、2016年から[Alexandros]のライブにて、各公演コンセプトに合わせた独自のVJシステムを開発・提供している等、現実でのインタラクティブペルソナを自在に切り替え、新たなインスピレーションを解き放ちます。`,
     meta: `Domains of Expertise
 VFX, MotionGraphics, Compositing
 Modeling, Rigging, Texturing
@@ -428,7 +402,6 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     if(!card) return;
     openModal(card.dataset.modal);
   });
-  document.getElementById('modalClose').addEventListener('click', closeModal);
   overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
   window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !overlay.hidden) closeModal(); });
 
