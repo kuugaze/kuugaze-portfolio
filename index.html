@@ -737,22 +737,47 @@
   const WORKER_URL = 'https://kuugaze-site-update.kuugaze.workers.dev';
   const ADMIN_SECRET_KEY = 'kuugazeAdminSecret';
 
-  function getAdminSecret(){
+   function askAdminSecretInline(container){
+    return new Promise((resolve) => {
+      const box = document.createElement('div');
+      box.style.cssText = 'margin-top:8px;display:flex;gap:6px;';
+      box.innerHTML = `
+        <input type="password" placeholder="シークレットキー" style="flex:1;min-width:0;font-size:12px;padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);font-family:inherit;">
+        <button type="button" style="font-size:12px;font-weight:700;padding:7px 12px;border:none;border-radius:5px;background:var(--accent);color:#fff;cursor:pointer;">OK</button>
+      `;
+      container.appendChild(box);
+      const input = box.querySelector('input');
+      const okBtn = box.querySelector('button');
+      input.focus();
+      function finish(){
+        const val = input.value;
+        box.remove();
+        resolve(val);
+      }
+      okBtn.addEventListener('click', finish);
+      input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){ e.preventDefault(); finish(); }
+      });
+    });
+  }
+
+  async function getAdminSecret(statusEl){
     let secret = localStorage.getItem(ADMIN_SECRET_KEY);
-    if(!secret){
-      secret = window.prompt('管理用のシークレットキーを入力してください（初回のみ、この端末に保存されます）');
-      if(secret) localStorage.setItem(ADMIN_SECRET_KEY, secret);
-    }
+    if(secret) return secret;
+    const container = statusEl ? statusEl.parentNode : document.body;
+    if(statusEl) statusEl.textContent = '初回のみ、管理用のシークレットキーを入力してください（この端末に保存されます）';
+    secret = await askAdminSecretInline(container);
+    if(secret) localStorage.setItem(ADMIN_SECRET_KEY, secret);
     return secret;
   }
 
   async function publishSiteUpdate(payload, files, statusEl){
-    const secret = getAdminSecret();
+    const secret = await getAdminSecret(statusEl);
     if(!secret){
       if(statusEl) statusEl.textContent = 'シークレットキーが入力されなかったため、公開を中止しました。';
       return false;
     }
-    const form = new FormData();
+   const form = new FormData();
     form.append('payload', JSON.stringify(payload));
     if(files){
       Object.keys(files).forEach(token => {
