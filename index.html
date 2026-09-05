@@ -494,6 +494,7 @@
   }
   .we-save-btn{ background:var(--accent); color:#fff; }
   .we-cancel-btn{ background:var(--line); color:var(--ink); }
+  .we-delete-btn{ background:#c0392b; color:#fff; margin-left:auto; }
   #weStatus{
     margin-top:10px;
     font-size:12px;
@@ -761,6 +762,8 @@
     });
   }
 
+  function askConfirmInline(container, message){ return new Promise((resolve) => { const box = document.createElement('div'); box.style.cssText = 'margin-top:8px;'; box.innerHTML = ` <div style="font-size:12px;margin-bottom:6px;color:var(--ink);">${escapeHtml(message)}</div> <div style="display:flex;gap:6px;"> <button type="button" class="we-confirm-yes" style="font-size:12px;font-weight:700;padding:7px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;cursor:pointer;">削除する</button> <button type="button" class="we-confirm-no" style="font-size:12px;font-weight:700;padding:7px 12px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);cursor:pointer;">キャンセル</button> </div> `; container.appendChild(box); box.querySelector('.we-confirm-yes').addEventListener('click', () => { box.remove(); resolve(true); }); box.querySelector('.we-confirm-no').addEventListener('click', () => { box.remove(); resolve(false); }); }); }
+
   async function getAdminSecret(statusEl){
     let secret = localStorage.getItem(ADMIN_SECRET_KEY);
     if(secret) return secret;
@@ -862,6 +865,7 @@
         <div class="we-actions">
           <button type="button" class="we-save-btn" id="weCopyBtn">公開する</button>
           <button type="button" class="we-cancel-btn" id="weCancelBtn">閉じる</button>
+          ${(!isNew && !isAbout) ? '<button type="button" class="we-delete-btn" id="weDeleteBtn">削除する</button>' : ''}
         </div>
         <div id="weStatus"></div>
       </div>
@@ -955,7 +959,8 @@
       };
       await publishSiteUpdate(payload, files, status);
     });
-  }
+
+    const deleteBtn = overlay.querySelector('#weDeleteBtn'); if(deleteBtn){ deleteBtn.addEventListener('click', async () => { const status = overlay.querySelector('#weStatus'); status.innerHTML = ''; const ok = await askConfirmInline(status.parentNode, `「${work.title}」を削除します。よろしいですか？（元に戻せません）`); if(!ok) return; deleteBtn.disabled = true; const success = await publishSiteUpdate({ type: 'delete', key: weState.key }, {}, status); if(success){ setTimeout(() => { overlay.remove(); weState = null; }, 1200); }else{ deleteBtn.disabled = false; } }); } }
 
   function buildAdminPanel(){
     const panel = document.createElement('div');
