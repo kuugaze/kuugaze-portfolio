@@ -1,0 +1,23 @@
+name: Process site update issue
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  process:
+    if: contains(github.event.issue.labels.*.name, 'site-update')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Process issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const path = require('path');
+            const { processIssue } = require(path.join(process.env.GITHUB_WORKSPACE, '.github/scripts/process-issue.js'));
+            await processIssue({ github, context, core });
