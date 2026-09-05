@@ -208,35 +208,5 @@
     "images": [
       "images/elektra16_1.jpg"
     ]
-  },
-  {
-    "key": "work-2",
-    "category": "ｖ",
-    "title": "ｓ",
-    "subtitle": "ｓv",
-    "jp": "v",
-    "en": "v",
-    "meta": "v",
-    "note": "v"
-  },
-  {
-    "key": "work-4",
-    "category": "d",
-    "title": "e",
-    "subtitle": "d",
-    "jp": "d",
-    "en": "d",
-    "meta": "d",
-    "note": "d"
-  },
-  {
-    "key": "work-5",
-    "category": "ｗｓ",
-    "title": "ｗｓ",
-    "subtitle": "ｗｓ",
-    "jp": "ｗｓ",
-    "en": "ｗｓ",
-    "meta": "ｗｓ",
-    "note": "ｗｓ"
   }
 ]
