@@ -446,6 +446,7 @@
   .we-field textarea{ resize:vertical; }
   .we-thumb-preview{
     width:120px; height:120px;
+    width:120px; height:120px;
     border-radius:4px;
     object-fit:cover;
     border:1px solid var(--line);
@@ -540,21 +541,8 @@
 </div>
 
 <script>
-  const ABOUT = {
-    subtitle: "about",
-    jp: `東京を拠点に活動するデジタルアーティスト、映像監督、3DCGジェネラリスト、VJ。
-
-近年はVirtual Live、VTuber MV、VRコンテンツ開発など、仮想空間での演出、制作に携わる傍ら、2016年から[Alexandros]のライブにて、各公演コンセプトに合わせた独自のVJシステムを開発・提供している等、現実でのインタラクティブコンテンツ開発も行う。
-
-私はクリエイターとして「Kuugaze」と「Yukinomitama」という二つの名前を持っています。作品のコンテキストに応じて、この二つのクリエイティブペルソナを自在に切り替え、新たなインスピレーションを解き放ちます。`,
-    meta: `Domains of Expertise
-VFX, MotionGraphics, Compositing
-Modeling, Rigging, Texturing
-VJ system development, Audiovisual Performance
-
-Software
-CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / SubstancePainter / AfterEffects / etc.`
-  };
+  const GH_REPO = 'kuugaze/kuugaze-portfolio';
+  let ABOUT = { subtitle: 'about', jp: '', meta: '' };
 
   let WORKS = [];
   let WORKS_BY_KEY = {};
@@ -740,45 +728,94 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     return '';
   }
 
+  // --- Publish via GitHub Issue: builds the payload/body, copies it to the
+  // clipboard as a fallback, and opens a pre-filled "new issue" page. A
+  // GitHub Action (triggered by the "site-update" label) reads the issue
+  // and updates the site automatically — no token or API call ever runs
+  // from this page. ---
+  function buildSiteUpdateBody(payload, imageSlots){
+    let body = 'SITE-UPDATE-PAYLOAD-START\n```json\n' + JSON.stringify(payload, null, 2) + '\n```\nSITE-UPDATE-PAYLOAD-END\n';
+    if(imageSlots && imageSlots.length){
+      body += '\n---\n### 画像をアップロードしてください\n下記の見出しのすぐ下に、対応する画像をドラッグ&ドロップ（またはペースト）してください。\n';
+      imageSlots.forEach(slot => {
+        body += `\n#### IMG:${slot.token} (${slot.label})\n\n`;
+      });
+    }
+    return body;
+  }
+  async function publishSiteUpdate(payload, imageSlots, titleText, statusEl){
+    const body = buildSiteUpdateBody(payload, imageSlots);
+    const w = window.open('about:blank', '_blank');
+    let copied = false;
+    try{
+      await navigator.clipboard.writeText(body);
+      copied = true;
+    }catch(err){ /* clipboard unavailable; fall through */ }
+    const url = `https://github.com/${GH_REPO}/issues/new?title=${encodeURIComponent(titleText)}&labels=site-update`;
+    if(w) w.location.href = url;
+    else window.open(url, '_blank');
+    if(statusEl){
+      if(copied){
+        statusEl.textContent = imageSlots && imageSlots.length
+          ? '開いたGitHubのページの本文欄に貼り付け（Ctrl+V / Cmd+V）し、指定された場所に画像をドラッグ&ドロップしてから「Submit new issue」を押してください。数分でサイトに反映されます。'
+          : '開いたGitHubのページの本文欄に貼り付け（Ctrl+V / Cmd+V）して「Submit new issue」を押してください。数分でサイトに反映されます。';
+      }else{
+        statusEl.textContent = 'クリップボードへのコピーに失敗しました。以下の内容を手動でコピーして、開いたGitHubのページの本文欄に貼り付けてください：\n\n' + body;
+      }
+    }
+  }
+
   let weState = null;
 
-  function openWorkEditor(work){
+  function openWorkEditor(work, opts){
+    opts = opts || {};
+    const isAbout = !!opts.isAbout;
     const existing = document.getElementById('workEditorOverlay');
     if(existing) existing.remove();
 
-    const isNew = !work;
+    const isNew = !isAbout && !work;
     weState = {
-      key: isNew ? null : work.key,
+      key: isAbout ? null : (isNew ? null : work.key),
       pendingThumbFile: null,
-      remainingImages: (!isNew && work.images) ? [...work.images] : [],
+      remainingImages: (!isAbout && !isNew && work.images) ? [...work.images] : [],
       pendingGalleryFiles: []
     };
 
-    const overlay = document.createElement('div');
-    overlay.id = 'workEditorOverlay';
-    overlay.innerHTML = `
-      <div class="work-editor">
-        <h2>${isNew ? '新しい作品を追加' : '作品を編集'}</h2>
+    const thumbFieldHtml = isAbout ? '' : `
         <div class="we-field">
           <label>サムネイル</label>
           <img class="we-thumb-preview" id="weThumbPreview" src="${isNew ? '' : escapeAttr(work.thumb)}" ${isNew ? 'style="display:none"' : ''}>
           <input type="file" id="weThumbFile" accept="image/*">
-        </div>
+        </div>`;
+    const categoryTitleHtml = isAbout ? '' : `
         <div class="we-field"><label>カテゴリ</label><input type="text" id="weCategory" value="${isNew ? '' : escapeAttr(work.category || '')}"></div>
-        <div class="we-field"><label>タイトル（必須）</label><input type="text" id="weTitle" value="${isNew ? '' : escapeAttr(work.title || '')}"></div>
-        <div class="we-field"><label>サブタイトル</label><input type="text" id="weSubtitle" value="${isNew ? '' : escapeAttr(work.subtitle || '')}"></div>
-        <div class="we-field"><label>本文（日本語）</label><textarea id="weJp" rows="5">${isNew ? '' : escapeHtml(work.jp || '')}</textarea></div>
+        <div class="we-field"><label>タイトル（必須）</label><input type="text" id="weTitle" value="${isNew ? '' : escapeAttr(work.title || '')}"></div>`;
+    const enNoteEmbedGalleryHtml = isAbout ? '' : `
         <div class="we-field"><label>本文（英語・任意）</label><textarea id="weEn" rows="4">${isNew ? '' : escapeHtml(work.en || '')}</textarea></div>
-        <div class="we-field"><label>メタ情報（任意）</label><textarea id="weMeta" rows="3">${isNew ? '' : escapeHtml(work.meta || '')}</textarea></div>
         <div class="we-field"><label>備考（任意）</label><textarea id="weNote" rows="3">${isNew ? '' : escapeHtml(work.note || '')}</textarea></div>
         <div class="we-field"><label>動画URL（YouTube / Vimeo・任意）</label><input type="text" id="weEmbed" value="${isNew ? '' : escapeAttr(embedToUrl(work.embed))}" placeholder="https://youtu.be/..."></div>
         <div class="we-field">
           <label>ギャラリー画像</label>
           <div class="we-gallery-list" id="weGalleryList"></div>
           <input type="file" id="weGalleryFile" accept="image/*" multiple>
-        </div>
+        </div>`;
+    const subtitleValue = isAbout ? escapeAttr(ABOUT.subtitle || '') : (isNew ? '' : escapeAttr(work.subtitle || ''));
+    const jpValue = isAbout ? escapeHtml(ABOUT.jp || '') : (isNew ? '' : escapeHtml(work.jp || ''));
+    const metaValue = isAbout ? escapeHtml(ABOUT.meta || '') : (isNew ? '' : escapeHtml(work.meta || ''));
+
+    const overlay = document.createElement('div');
+    overlay.id = 'workEditorOverlay';
+    overlay.innerHTML = `
+      <div class="work-editor">
+        <h2>${isAbout ? 'Aboutを編集' : (isNew ? '新しい作品を追加' : '作品を編集')}</h2>
+        ${thumbFieldHtml}
+        ${categoryTitleHtml}
+        <div class="we-field"><label>サブタイトル</label><input type="text" id="weSubtitle" value="${subtitleValue}"></div>
+        <div class="we-field"><label>本文（日本語）</label><textarea id="weJp" rows="5">${jpValue}</textarea></div>
+        <div class="we-field"><label>メタ情報（任意）</label><textarea id="weMeta" rows="3">${metaValue}</textarea></div>
+        ${enNoteEmbedGalleryHtml}
         <div class="we-actions">
-          <button type="button" class="we-save-btn" id="weCopyBtn">コピーする</button>
+          <button type="button" class="we-save-btn" id="weCopyBtn">GitHubで公開する</button>
           <button type="button" class="we-cancel-btn" id="weCancelBtn">閉じる</button>
         </div>
         <div id="weStatus"></div>
@@ -806,24 +843,26 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
         });
       });
     }
-    renderGalleryList();
+    if(!isAbout) renderGalleryList();
 
-    const thumbFileInput = overlay.querySelector('#weThumbFile');
-    const thumbPreview = overlay.querySelector('#weThumbPreview');
-    thumbFileInput.addEventListener('change', () => {
-      const f = thumbFileInput.files[0];
-      if(!f) return;
-      weState.pendingThumbFile = f;
-      thumbPreview.src = URL.createObjectURL(f);
-      thumbPreview.style.display = 'block';
-    });
+    if(!isAbout){
+      const thumbFileInput = overlay.querySelector('#weThumbFile');
+      const thumbPreview = overlay.querySelector('#weThumbPreview');
+      thumbFileInput.addEventListener('change', () => {
+        const f = thumbFileInput.files[0];
+        if(!f) return;
+        weState.pendingThumbFile = f;
+        thumbPreview.src = URL.createObjectURL(f);
+        thumbPreview.style.display = 'block';
+      });
 
-    const galleryFileInput = overlay.querySelector('#weGalleryFile');
-    galleryFileInput.addEventListener('change', () => {
-      weState.pendingGalleryFiles.push(...Array.from(galleryFileInput.files));
-      galleryFileInput.value = '';
-      renderGalleryList();
-    });
+      const galleryFileInput = overlay.querySelector('#weGalleryFile');
+      galleryFileInput.addEventListener('change', () => {
+        weState.pendingGalleryFiles.push(...Array.from(galleryFileInput.files));
+        galleryFileInput.value = '';
+        renderGalleryList();
+      });
+    }
 
     overlay.querySelector('#weCancelBtn').addEventListener('click', () => {
       overlay.remove();
@@ -831,12 +870,32 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     });
 
     overlay.querySelector('#weCopyBtn').addEventListener('click', async () => {
-      const title = overlay.querySelector('#weTitle').value.trim();
       const status = overlay.querySelector('#weStatus');
+
+      if(isAbout){
+        const payload = {
+          type: 'about',
+          subtitle: overlay.querySelector('#weSubtitle').value.trim(),
+          jp: overlay.querySelector('#weJp').value.trim(),
+          meta: overlay.querySelector('#weMeta').value.trim()
+        };
+        status.textContent = 'GitHubのページを開いています…';
+        await publishSiteUpdate(payload, [], '[site-update] about', status);
+        return;
+      }
+
+      const title = overlay.querySelector('#weTitle').value.trim();
       if(!title){ status.textContent = 'タイトルを入力してください'; return; }
       const embed = parseEmbedUrl(overlay.querySelector('#weEmbed').value);
+      const imageSlots = [];
+      if(weState.pendingThumbFile) imageSlots.push({ token: 'THUMB', label: 'サムネイル' });
+      weState.pendingGalleryFiles.forEach((f, i) => {
+        imageSlots.push({ token: `GAL${i + 1}`, label: `ギャラリー画像 ${i + 1}` });
+      });
       const payload = {
+        type: 'work',
         key: weState.key,
+        original: (!isNew && work) ? work : null,
         category: overlay.querySelector('#weCategory').value.trim(),
         title,
         subtitle: overlay.querySelector('#weSubtitle').value.trim(),
@@ -846,21 +905,13 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
         note: overlay.querySelector('#weNote').value.trim(),
         embed,
         existingImages: weState.remainingImages,
-        newThumbnail: weState.pendingThumbFile ? weState.pendingThumbFile.name : null,
-        newGalleryImages: weState.pendingGalleryFiles.map(f => f.name)
+        currentThumb: (!isNew && work) ? work.thumb : null,
+        newThumbnail: weState.pendingThumbFile ? 'THUMB' : null,
+        newGalleryImages: weState.pendingGalleryFiles.map((f, i) => `GAL${i + 1}`)
       };
-      const text = JSON.stringify(payload, null, 2);
-      const filesToAttach = [];
-      if(weState.pendingThumbFile) filesToAttach.push(weState.pendingThumbFile.name);
-      weState.pendingGalleryFiles.forEach(f => filesToAttach.push(f.name));
-      try{
-        await navigator.clipboard.writeText(text);
-        status.textContent = filesToAttach.length
-          ? `コピーしました。次の画像ファイルをこの内容と一緒にチャットに添付して送ってください：${filesToAttach.join('、')}`
-          : 'コピーしました。そのままClaudeに貼り付けて送ってください。';
-      }catch(err){
-        status.textContent = text;
-      }
+      const issueTitle = isNew ? `[site-update] work-new: ${title}` : `[site-update] work-edit: ${weState.key}`;
+      status.textContent = 'GitHubのページを開いています…';
+      await publishSiteUpdate(payload, imageSlots, issueTitle, status);
     });
   }
 
@@ -869,8 +920,8 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     panel.id = 'adminPanel';
     panel.innerHTML = `
       <div class="admin-title">管理者モード</div>
-      <div class="admin-desc">カードをドラッグして並び替え、左上の「編集」でサムネ・キャプション・画像・動画を変更、右上のボタンで公開・非公開を切り替えられます。変更したらボタンでコピーして、そのままClaudeとのチャットに貼り付けて送ってください（画像を変更した場合は、その画像ファイルも一緒に添付してください）。</div>
-      <button id="adminCopyBtn">並び替え・公開状態をコピー</button>
+      <div class="admin-desc">カードをドラッグして並び替え、左上の「編集」でサムネ・キャプション・画像・動画を変更、右上のボタンで公開・非公開を切り替えられます。変更したらボタンを押すとGitHubのページが開くので、そのまま送信すれば自動でサイトに反映されます。</div>
+      <button id="adminCopyBtn">並び替え・公開状態を公開する</button>
       <div id="adminStatus"></div>
       <hr class="admin-divider">
       <button id="adminAddNewBtn">＋ 新しい作品を追加</button>
@@ -883,13 +934,9 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
       syncWorksOrderFromDom();
       const order = WORKS.map(w => w.key);
       const hidden = WORKS.filter(w => w.hidden).map(w => w.key);
-      const text = JSON.stringify({ order, hidden });
-      try{
-        await navigator.clipboard.writeText(text);
-        status.textContent = 'コピーしました。Claudeに貼り付けて送ってください。';
-      }catch(err){
-        status.textContent = text;
-      }
+      const payload = { type: 'reorder', order, hidden };
+      status.textContent = 'GitHubのページを開いています…';
+      await publishSiteUpdate(payload, [], '[site-update] reorder', status);
     });
 
     panel.querySelector('#adminAddNewBtn').addEventListener('click', () => {
@@ -897,17 +944,36 @@ CINEMA4D / Blender / Houdini / TouchDesigner / Unity / UnrealEngine / Notch / Su
     });
   }
 
-  fetch('works.json')
-    .then(r => r.json())
-    .then(works => {
+  function enableAboutEditButton(){
+    const aboutThumb = document.querySelector('.about-card .thumb');
+    if(!aboutThumb) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'edit-toggle-btn';
+    btn.textContent = '編集';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      openWorkEditor(null, { isAbout: true });
+    });
+    aboutThumb.insertBefore(btn, aboutThumb.firstChild);
+  }
+
+  Promise.all([
+    fetch('works.json').then(r => r.json()),
+    fetch('about.json').then(r => r.ok ? r.json() : null).catch(() => null)
+  ])
+    .then(([works, about]) => {
       WORKS = works;
       WORKS_BY_KEY = Object.fromEntries(works.map(w => [w.key, w]));
+      if(about) ABOUT = about;
       const visibleWorks = isAdmin ? works : works.filter(w => !w.hidden);
       grid.insertAdjacentHTML('beforeend', visibleWorks.map(w => cardHtml(w, isAdmin)).join(''));
       if(isAdmin){
         enableDragReorder();
         enableHideToggle();
         enableEditButtons();
+        enableAboutEditButton();
         buildAdminPanel();
       }
     })
