@@ -288,8 +288,7 @@
   }
 
   .admin-mode .card:not(.about-card){
-    cursor:grab;
-  }
+    cursor:grab;  }
   .admin-mode .card:not(.about-card):active{
     cursor:grabbing;
   }
@@ -663,7 +662,7 @@
       card.addEventListener('dragover', (e) => {
         e.preventDefault();
         if(!dragEl) return;
-        const after = getDragAfterElement(grid, e.clientX, e.clientY, dragEl);
+        const after =getDragAfterElement(grid, e.clientX, e.clientY, dragEl);
         if(after == null) grid.appendChild(dragEl);
         else grid.insertBefore(dragEl, after);
       });
@@ -728,22 +727,63 @@
     return '';
   }
 
-  // --- Publish via GitHub Issue: builds the payload/body, copies it to the
-  // clipboard as a fallback, and opens a pre-filled "new issue" page. A
-  // GitHub Action (triggered by the "site-update" label) reads the issue
-  // and updates the site automatically — no token or API call ever runs
-  // from this page. ---
-  function buildSiteUpdateBody(payload, imageSlots){
-    let body = 'SITE-UPDATE-PAYLOAD-START\n```json\n' + JSON.stringify(payload, null, 2) + '\n```\nSITE-UPDATE-PAYLOAD-END\n';
-    if(imageSlots && imageSlots.length){
-      body += '\n---\n### 画像をアップロードしてください\n下記の見出しのすぐ下に、対応する画像をドラッグ&ドロップ（またはペースト）してください。\n';
-      imageSlots.forEach(slot => {
-        body += `\n#### IMG:${slot.token} (${slot.label})\n\n`;
+  // --- Publish via the kuugaze-site-update Cloudflare Worker: the admin
+  // panel POSTs the payload (plus any new image files) straight to the
+  // Worker, which authenticates the request and writes works.json /
+  // about.json / images/* to GitHub directly. Nothing is committed to the
+  // repo from this page itself, and no GitHub token is ever present in
+  // this file's source — only a per-admin shared secret, entered once by
+  // the admin and kept in this browser's local storage. ---
+  const WORKER_URL = 'https://kuugaze-site-update.kuugaze.workers.dev';
+  const ADMIN_SECRET_KEY = 'kuugazeAdminSecret';
+
+  function getAdminSecret(){
+    let secret = localStorage.getItem(ADMIN_SECRET_KEY);
+    if(!secret){
+      secret = window.prompt('管理用のシークレットキーを入力してください（初回のみ、この端末に保存されます）');
+      if(secret) localStorage.setItem(ADMIN_SECRET_KEY, secret);
+    }
+    return secret;
+  }
+
+  async function publishSiteUpdate(payload, files, statusEl){
+    const secret = getAdminSecret();
+    if(!secret){
+      if(statusEl) statusEl.textContent = 'シークレットキーが入力されなかったため、公開を中止しました。';
+      return false;
+    }
+    const form = new FormData();
+    form.append('payload', JSON.stringify(payload));
+    if(files){
+      Object.keys(files).forEach(token => {
+        if(files[token]) form.append(token, files[token]);
       });
     }
-    return body;
+    if(statusEl) statusEl.textContent = '公開処理中…';
+    try{
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${secret}` },
+        body: form
+      });
+      let data = {};
+      try{ data = await res.json(); }catch(e){}
+      if(res.ok && data.ok){
+        if(statusEl) statusEl.textContent = data.message || '公開しました。数分でサイトに反映されます。';
+        return true;
+      }
+      if(res.status === 401){
+        localStorage.removeItem(ADMIN_SECRET_KEY);
+        if(statusEl) statusEl.textContent = 'シークレットキーが正しくありません。もう一度お試しください。';
+      }else if(statusEl){
+        statusEl.textContent = 'エラーが発生しました: ' + (data.error || res.status);
+      }
+      return false;
+    }catch(err){
+      if(statusEl) statusEl.textContent = '通信エラーが発生しました: ' + err.message;
+      return false;
+    }
   }
-  async function publishSiteUpdate(payload, imageSlots, titleText, statusEl){ const body = buildSiteUpdateBody(payload, imageSlots); const encodedBody = encodeURIComponent(body); const base = `https://github.com/${GH_REPO}/issues/new?title=${encodeURIComponent(titleText)}&labels=site-update`; const SAFE_URL_BODY_LIMIT = 6000; if(encodedBody.length <= SAFE_URL_BODY_LIMIT){ window.open(`${base}&body=${encodedBody}`, '_blank'); if(statusEl){ statusEl.textContent = imageSlots && imageSlots.length ? '開いたGitHubのページで、指定された場所に画像をドラッグ&ドロップしてから「Submit new issue」を押してください。数分でサイトに反映されます。' : '開いたGitHubのページで「Submit new issue」を押してください。数分でサイトに反映されます。'; } return; } const w = window.open('about:blank', '_blank'); let copied = false; try{ await navigator.clipboard.writeText(body); copied = true; }catch(err){ } if(w) w.location.href = base; else window.open(base, '_blank'); if(statusEl){ if(copied){ statusEl.textContent = imageSlots && imageSlots.length ? '開いたGitHubのページの本文欄に貼り付け（Ctrl+V / Cmd+V）し、指定された場所に画像をドラッグ&ドロップしてから「Submit new issue」を押してください。数分でサイトに反映されます。' : '開いたGitHubのページの本文欄に貼り付け（Ctrl+V / Cmd+V）して「Submit new issue」を押してください。数分でサイトに反映されます。'; }else{ statusEl.textContent = 'クリップボードへのコピーに失敗しました。以下の内容を手動でコピーして、開いたGitHubのページの本文欄に貼り付けてください：\n\n' + body; } } }
 
   let weState = null;
 
@@ -795,7 +835,7 @@
         <div class="we-field"><label>メタ情報（任意）</label><textarea id="weMeta" rows="3">${metaValue}</textarea></div>
         ${enNoteEmbedGalleryHtml}
         <div class="we-actions">
-          <button type="button" class="we-save-btn" id="weCopyBtn">GitHubで公開する</button>
+          <button type="button" class="we-save-btn" id="weCopyBtn">公開する</button>
           <button type="button" class="we-cancel-btn" id="weCancelBtn">閉じる</button>
         </div>
         <div id="weStatus"></div>
@@ -859,18 +899,17 @@
           jp: overlay.querySelector('#weJp').value.trim(),
           meta: overlay.querySelector('#weMeta').value.trim()
         };
-        status.textContent = 'GitHubのページを開いています…';
-        await publishSiteUpdate(payload, [], '[site-update] about', status);
+        await publishSiteUpdate(payload, {}, status);
         return;
       }
 
       const title = overlay.querySelector('#weTitle').value.trim();
       if(!title){ status.textContent = 'タイトルを入力してください'; return; }
       const embed = parseEmbedUrl(overlay.querySelector('#weEmbed').value);
-      const imageSlots = [];
-      if(weState.pendingThumbFile) imageSlots.push({ token: 'THUMB', label: 'サムネイル' });
+      const files = {};
+      if(weState.pendingThumbFile) files['THUMB'] = weState.pendingThumbFile;
       weState.pendingGalleryFiles.forEach((f, i) => {
-        imageSlots.push({ token: `GAL${i + 1}`, label: `ギャラリー画像 ${i + 1}` });
+        files[`GAL${i + 1}`] = f;
       });
       const payload = {
         type: 'work',
@@ -889,9 +928,7 @@
         newThumbnail: weState.pendingThumbFile ? 'THUMB' : null,
         newGalleryImages: weState.pendingGalleryFiles.map((f, i) => `GAL${i + 1}`)
       };
-      const issueTitle = isNew ? `[site-update] work-new: ${title}` : `[site-update] work-edit: ${weState.key}`;
-      status.textContent = 'GitHubのページを開いています…';
-      await publishSiteUpdate(payload, imageSlots, issueTitle, status);
+      await publishSiteUpdate(payload, files, status);
     });
   }
 
@@ -900,8 +937,8 @@
     panel.id = 'adminPanel';
     panel.innerHTML = `
       <div class="admin-title">管理者モード</div>
-      <div class="admin-desc">カードをドラッグして並び替え、左上の「編集」でサムネ・キャプション・画像・動画を変更、右上のボタンで公開・非公開を切り替えられます。変更したらボタンを押すとGitHubのページが開くので、そのまま送信すれば自動でサイトに反映されます。</div>
-      <button id="adminCopyBtn">並び替え・公開状態を公開する</button>
+      <div class="admin-desc">カードをドラッグして並び替え、左上の「編集」でサムネ・キャプション・画像・動画を変更、右上のボタンで公開・非公開を切り替えられます。変更したらボタンを押すと自動でサイトに反映されます（確認や送信操作は不要です）。</div>
+      <button id="adminCopyBtn">並び替え・公開状態を保存する</button>
       <div id="adminStatus"></div>
       <hr class="admin-divider">
       <button id="adminAddNewBtn">＋ 新しい作品を追加</button>
@@ -915,8 +952,7 @@
       const order = WORKS.map(w => w.key);
       const hidden = WORKS.filter(w => w.hidden).map(w => w.key);
       const payload = { type: 'reorder', order, hidden };
-      status.textContent = 'GitHubのページを開いています…';
-      await publishSiteUpdate(payload, [], '[site-update] reorder', status);
+      await publishSiteUpdate(payload, {}, status);
     });
 
     panel.querySelector('#adminAddNewBtn').addEventListener('click', () => {
