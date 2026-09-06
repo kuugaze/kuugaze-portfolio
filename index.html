@@ -214,7 +214,7 @@
     position:absolute;
     top:14px; right:14px;
     width:32px; height:32px;
-    border-radius:50%;
+    border-radius:6px;
     border:none;
     background:var(--line);
     color:var(--ink);
@@ -234,6 +234,7 @@
     font-size:22px;
     line-height:1.4;
     margin:0 0 18px;
+    padding-right:40px;
     text-wrap:balance;
   }
   .proj-heading2{
@@ -462,7 +463,6 @@
   .we-field textarea{ resize:vertical; }
   .we-thumb-preview{
     width:120px; height:120px;
-    width:120px; height:120px;
     border-radius:4px;
     object-fit:cover;
     border:1px solid var(--line);
@@ -518,6 +518,78 @@
     color:var(--sub);
     line-height:1.6;
     white-space:pre-wrap;
+  }
+
+  .rte-toolbar{
+    display:flex; flex-wrap:wrap; gap:4px;
+    margin-bottom:6px;
+  }
+  .rte-toolbar select,
+  .rte-toolbar input[type="color"]{
+    font-size:11px;
+    padding:4px 6px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:inherit;
+  }
+  .rte-toolbar input[type="color"]{
+    padding:2px;
+    width:30px;
+    height:27px;
+    cursor:pointer;
+  }
+  .rte-btn{
+    font-size:12px;
+    padding:5px 10px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:var(--bg);
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .rte-editor{
+    min-height:110px;
+    max-height:260px;
+    overflow-y:auto;
+    border:1px solid var(--line);
+    border-radius:5px;
+    padding:8px 10px;
+    background:var(--bg);
+    color:var(--ink);
+    font-size:13px;
+    line-height:1.7;
+    white-space:pre-wrap;
+  }
+  .rte-editor:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  .rte-editor a{ color:var(--accent); text-decoration:underline; }
+  .rte-link-box{
+    margin-top:6px;
+    display:flex; gap:6px;
+  }
+  .rte-link-box input{
+    flex:1; min-width:0;
+    font-size:12px;
+    padding:7px 9px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:inherit;
+  }
+  .rte-link-box button{
+    font-size:12px;
+    font-weight:700;
+    padding:7px 12px;
+    border:none;
+    border-radius:5px;
+    background:var(--accent);
+    color:#fff;
+    cursor:pointer;
   }
 </style>
 </head>
@@ -578,6 +650,13 @@
     esc = esc.replace(/^■.*$/gm, '<strong>$&</strong>');
     return esc;
   }
+  function looksLikeRichHtml(s){
+    return /<\/?(b|i|em|strong|span|a|br|div|p|u|font)[ >]/i.test(s || '');
+  }
+  function renderBody(text){
+    if(!text) return '';
+    return looksLikeRichHtml(text) ? text : fmt(text);
+  }
   function cardHtml(work, isAdminCard){
     const hiddenClass = (isAdminCard && work.hidden) ? ' is-hidden' : '';
     const toggleBtn = isAdminCard
@@ -604,13 +683,13 @@
     return `<div class="proj-gallery">${images.map(src=>`<img src="${src}" alt="" loading="lazy">`).join('')}</div>`;
   }
   function renderProject(d){
-    let html = `<div class="proj-subtitle">${escapeHtml(d.subtitle)}</div>`;
-    if(d.jp) html += `<div class="proj-text">${fmt(d.jp)}</div>`;
+    let html = `<div class="proj-subtitle">${escapeHtml(d.subtitle || '')}</div>`;
+    if(d.en) html += `<div class="proj-text">${renderBody(d.en)}</div>`;
     if(d.jp && d.en) html += `<hr class="proj-divider">`;
-    if(d.en) html += `<div class="proj-text">${fmt(d.en)}</div>`;
+    if(d.jp) html += `<div class="proj-text">${renderBody(d.jp)}</div>`;
     if(d.heading2) html += `<div class="proj-heading2">${escapeHtml(d.heading2)}</div>`;
-    if(d.meta) html += `<div class="proj-meta">${fmt(d.meta)}</div>`;
-    if(d.note) html += `<div class="proj-note">${fmt(d.note)}</div>`;
+    if(d.meta) html += `<div class="proj-meta">${renderBody(d.meta)}</div>`;
+    if(d.note) html += `<div class="proj-note">${renderBody(d.note)}</div>`;
     if(d.embed) html += embedHtml(d);
     if(d.images) html += galleryHtml(d.images);
     return html;
@@ -747,6 +826,146 @@
     return '';
   }
 
+  // --- Rich text editor helpers (used for the English/Japanese body fields) ---
+  function looksLikeHtml(s){
+    return looksLikeRichHtml(s);
+  }
+  function loadIntoEditor(editorEl, value){
+    if(looksLikeHtml(value)) editorEl.innerHTML = value;
+    else editorEl.textContent = value || '';
+  }
+  function serializeEditorContent(editorEl){
+    // If the editor has no real formatting tags, prefer textContent over
+    // innerHTML: innerHTML always HTML-escapes characters like & < >, and
+    // re-saving that escaped-but-tagless text would otherwise corrupt it a
+    // little more on every save (& becoming &amp; becoming &amp;amp; ...).
+    const html = editorEl.innerHTML;
+    return looksLikeHtml(html) ? html : editorEl.textContent;
+  }
+  function askLinkUrlInline(container){
+    return new Promise((resolve) => {
+      const existing = container.querySelector('.rte-link-box');
+      if(existing) existing.remove();
+      const box = document.createElement('div');
+      box.className = 'rte-link-box';
+      box.innerHTML = `
+        <input type="text" placeholder="https://example.com">
+        <button type="button" data-act="ok">設定</button>
+        <button type="button" data-act="cancel">キャンセル</button>
+      `;
+      container.appendChild(box);
+      const input = box.querySelector('input');
+      input.focus();
+      function finish(val){
+        box.remove();
+        resolve(val);
+      }
+      box.querySelector('[data-act="ok"]').addEventListener('click', () => finish(input.value.trim()));
+      box.querySelector('[data-act="cancel"]').addEventListener('click', () => finish(null));
+      input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){ e.preventDefault(); finish(input.value.trim()); }
+        if(e.key === 'Escape'){ e.preventDefault(); finish(null); }
+      });
+    });
+  }
+  function applyFontSize(editorEl, px){
+    document.execCommand('fontSize', false, '7');
+    editorEl.querySelectorAll('font[size="7"]').forEach(el => {
+      el.removeAttribute('size');
+      el.style.fontSize = px + 'px';
+    });
+  }
+  function setupRichEditor(toolbarEl, editorEl){
+    editorEl.setAttribute('contenteditable', 'true');
+    try{ document.execCommand('defaultParagraphSeparator', false, 'br'); }catch(e){}
+
+    const fontSelect = toolbarEl.querySelector('.rte-font');
+    const sizeSelect = toolbarEl.querySelector('.rte-size');
+    const colorInput = toolbarEl.querySelector('.rte-color');
+    const boldBtn = toolbarEl.querySelector('[data-cmd="bold"]');
+    const italicBtn = toolbarEl.querySelector('[data-cmd="italic"]');
+    const normalBtn = toolbarEl.querySelector('[data-cmd="removeFormat"]');
+    const linkBtn = toolbarEl.querySelector('[data-cmd="link"]');
+
+    // Clicking a native <select>/<input type="color"> steals focus (and the
+    // browser's text Selection) away from the contenteditable before its
+    // change/input event fires. Keep track of the last real selection made
+    // inside the editor so we can restore it right before running a
+    // formatting command from the toolbar.
+    let savedRange = null;
+    function saveSelection(){
+      const sel = window.getSelection();
+      if(sel && sel.rangeCount > 0 && editorEl.contains(sel.anchorNode)){
+        savedRange = sel.getRangeAt(0).cloneRange();
+      }
+    }
+    editorEl.addEventListener('mouseup', saveSelection);
+    editorEl.addEventListener('keyup', saveSelection);
+    editorEl.addEventListener('input', saveSelection);
+
+    function focusEditor(){
+      editorEl.focus();
+      if(savedRange){
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      }
+    }
+
+    if(fontSelect){
+      fontSelect.addEventListener('mousedown', saveSelection);
+      fontSelect.addEventListener('change', () => {
+        if(!fontSelect.value) return;
+        focusEditor();
+        document.execCommand('fontName', false, fontSelect.value);
+      });
+    }
+    if(sizeSelect){
+      sizeSelect.addEventListener('mousedown', saveSelection);
+      sizeSelect.addEventListener('change', () => {
+        if(!sizeSelect.value) return;
+        focusEditor();
+        applyFontSize(editorEl, sizeSelect.value);
+      });
+    }
+    if(colorInput){
+      colorInput.addEventListener('mousedown', saveSelection);
+      colorInput.addEventListener('input', () => {
+        focusEditor();
+        document.execCommand('foreColor', false, colorInput.value);
+      });
+    }
+    if(boldBtn){
+      boldBtn.addEventListener('click', () => {
+        focusEditor();
+        document.execCommand('bold');
+      });
+    }
+    if(italicBtn){
+      italicBtn.addEventListener('click', () => {
+        focusEditor();
+        document.execCommand('italic');
+      });
+    }
+    if(normalBtn){
+      normalBtn.addEventListener('click', () => {
+        focusEditor();
+        document.execCommand('removeFormat');
+      });
+    }
+    if(linkBtn){
+      linkBtn.addEventListener('click', async () => {
+        if(!savedRange || savedRange.collapsed){
+          return;
+        }
+        const url = await askLinkUrlInline(toolbarEl.parentNode);
+        if(!url) return;
+        focusEditor();
+        document.execCommand('createLink', false, url);
+      });
+    }
+  }
+
   // --- Publish via the kuugaze-site-update Cloudflare Worker: the admin
   // panel POSTs the payload (plus any new image files) straight to the
   // Worker, which authenticates the request and writes works.json /
@@ -781,7 +1000,22 @@
     });
   }
 
-  function askConfirmInline(container, message){ return new Promise((resolve) => { const box = document.createElement('div'); box.style.cssText = 'margin-top:8px;'; box.innerHTML = ` <div style="font-size:12px;margin-bottom:6px;color:var(--ink);">${escapeHtml(message)}</div> <div style="display:flex;gap:6px;"> <button type="button" class="we-confirm-yes" style="font-size:12px;font-weight:700;padding:7px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;cursor:pointer;">削除する</button> <button type="button" class="we-confirm-no" style="font-size:12px;font-weight:700;padding:7px 12px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);cursor:pointer;">キャンセル</button> </div> `; container.appendChild(box); box.querySelector('.we-confirm-yes').addEventListener('click', () => { box.remove(); resolve(true); }); box.querySelector('.we-confirm-no').addEventListener('click', () => { box.remove(); resolve(false); }); }); }
+  function askConfirmInline(container, message){
+    return new Promise((resolve) => {
+      const box = document.createElement('div');
+      box.style.cssText = 'margin-top:8px;';
+      box.innerHTML = `
+        <div style="font-size:12px;margin-bottom:6px;color:var(--ink);">${escapeHtml(message)}</div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="we-confirm-yes" style="font-size:12px;font-weight:700;padding:7px 12px;border:none;border-radius:5px;background:#c0392b;color:#fff;cursor:pointer;">削除する</button>
+          <button type="button" class="we-confirm-no" style="font-size:12px;font-weight:700;padding:7px 12px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);cursor:pointer;">キャンセル</button>
+        </div>
+      `;
+      container.appendChild(box);
+      box.querySelector('.we-confirm-yes').addEventListener('click', () => { box.remove(); resolve(true); });
+      box.querySelector('.we-confirm-no').addEventListener('click', () => { box.remove(); resolve(false); });
+    });
+  }
 
   async function getAdminSecret(statusEl){
     let secret = localStorage.getItem(ADMIN_SECRET_KEY);
@@ -799,7 +1033,7 @@
       if(statusEl) statusEl.textContent = 'シークレットキーが入力されなかったため、公開を中止しました。';
       return false;
     }
-   const form = new FormData();
+    const form = new FormData();
     form.append('payload', JSON.stringify(payload));
     if(files){
       Object.keys(files).forEach(token => {
@@ -857,18 +1091,59 @@
     const categoryTitleHtml = isAbout ? '' : `
         <div class="we-field"><label>カテゴリ</label><input type="text" id="weCategory" value="${isNew ? '' : escapeAttr(work.category || '')}"></div>
         <div class="we-field"><label>タイトル（必須）</label><input type="text" id="weTitle" value="${isNew ? '' : escapeAttr(work.title || '')}"></div>`;
-    const enNoteEmbedGalleryHtml = isAbout ? '' : `
-        <div class="we-field"><label>本文（英語・任意）</label><textarea id="weEn" rows="4">${isNew ? '' : escapeHtml(work.en || '')}</textarea></div>
-        <div class="we-field"><label>備考（任意）</label><textarea id="weNote" rows="3">${isNew ? '' : escapeHtml(work.note || '')}</textarea></div>
+    const richToolbarHtml = `
+        <div class="rte-toolbar">
+          <select class="rte-font">
+            <option value="">フォント</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="'Times New Roman',serif">Times New Roman</option>
+            <option value="'Courier New',monospace">Courier New</option>
+            <option value="Verdana">Verdana</option>
+            <option value="'Hiragino Sans',sans-serif">Hiragino Sans</option>
+            <option value="'Yu Gothic',sans-serif">Yu Gothic</option>
+            <option value="Meiryo">Meiryo</option>
+          </select>
+          <select class="rte-size">
+            <option value="">サイズ</option>
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="13">13(標準)</option>
+            <option value="16">16</option>
+            <option value="20">20</option>
+            <option value="24">24</option>
+            <option value="32">32</option>
+          </select>
+          <input type="color" class="rte-color" title="文字色" value="#1a1a1a">
+          <button type="button" class="rte-btn" data-cmd="bold"><b>B</b></button>
+          <button type="button" class="rte-btn" data-cmd="italic"><i>I</i></button>
+          <button type="button" class="rte-btn" data-cmd="removeFormat">N</button>
+          <button type="button" class="rte-btn" data-cmd="link">🔗リンク</button>
+        </div>`;
+    const enJpEmbedGalleryHtml = isAbout ? '' : `
+        <div class="we-field">
+          <label>本文（英語）</label>
+          ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-en-toolbar')}
+          <div class="rte-editor" id="weEn"></div>
+        </div>
+        <div class="we-field">
+          <label>本文（日本語）</label>
+          ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-jp-toolbar')}
+          <div class="rte-editor" id="weJp"></div>
+        </div>
         <div class="we-field"><label>動画URL（YouTube / Vimeo・任意）</label><input type="text" id="weEmbed" value="${isNew ? '' : escapeAttr(embedToUrl(work.embed))}" placeholder="https://youtu.be/..."></div>
         <div class="we-field">
           <label>ギャラリー画像</label>
           <div class="we-gallery-list" id="weGalleryList"></div>
           <input type="file" id="weGalleryFile" accept="image/*" multiple>
         </div>`;
-    const subtitleValue = isAbout ? escapeAttr(ABOUT.subtitle || '') : (isNew ? '' : escapeAttr(work.subtitle || ''));
-    const jpValue = isAbout ? escapeHtml(ABOUT.jp || '') : (isNew ? '' : escapeHtml(work.jp || ''));
-    const metaValue = isAbout ? escapeHtml(ABOUT.meta || '') : (isNew ? '' : escapeHtml(work.meta || ''));
+    const subtitleValue = isAbout ? escapeAttr(ABOUT.subtitle || '') : '';
+    const aboutJpValue = isAbout ? escapeHtml(ABOUT.jp || '') : '';
+    const aboutMetaValue = isAbout ? escapeHtml(ABOUT.meta || '') : '';
+    const aboutFieldsHtml = isAbout ? `
+        <div class="we-field"><label>サブタイトル</label><input type="text" id="weSubtitle" value="${subtitleValue}"></div>
+        <div class="we-field"><label>本文（日本語）</label><textarea id="weAboutJp" rows="5">${aboutJpValue}</textarea></div>
+        <div class="we-field"><label>メタ情報（任意）</label><textarea id="weAboutMeta" rows="3">${aboutMetaValue}</textarea></div>` : '';
 
     const overlay = document.createElement('div');
     overlay.id = 'workEditorOverlay';
@@ -877,10 +1152,8 @@
         <h2>${isAbout ? 'Aboutを編集' : (isNew ? '新しい作品を追加' : '作品を編集')}</h2>
         ${thumbFieldHtml}
         ${categoryTitleHtml}
-        <div class="we-field"><label>サブタイトル</label><input type="text" id="weSubtitle" value="${subtitleValue}"></div>
-        <div class="we-field"><label>本文（日本語）</label><textarea id="weJp" rows="5">${jpValue}</textarea></div>
-        <div class="we-field"><label>メタ情報（任意）</label><textarea id="weMeta" rows="3">${metaValue}</textarea></div>
-        ${enNoteEmbedGalleryHtml}
+        ${aboutFieldsHtml}
+        ${enJpEmbedGalleryHtml}
         <div class="we-actions">
           <button type="button" class="we-save-btn" id="weCopyBtn">公開する</button>
           <button type="button" class="we-cancel-btn" id="weCancelBtn">閉じる</button>
@@ -890,6 +1163,15 @@
       </div>
     `;
     document.body.appendChild(overlay);
+
+    if(!isAbout){
+      const weEnEl = overlay.querySelector('#weEn');
+      const weJpEl = overlay.querySelector('#weJp');
+      loadIntoEditor(weEnEl, isNew ? '' : (work.en || ''));
+      loadIntoEditor(weJpEl, isNew ? '' : (work.jp || ''));
+      setupRichEditor(overlay.querySelector('.we-en-toolbar'), weEnEl);
+      setupRichEditor(overlay.querySelector('.we-jp-toolbar'), weJpEl);
+    }
 
     function renderGalleryList(){
       const list = overlay.querySelector('#weGalleryList');
@@ -944,8 +1226,8 @@
         const payload = {
           type: 'about',
           subtitle: overlay.querySelector('#weSubtitle').value.trim(),
-          jp: overlay.querySelector('#weJp').value.trim(),
-          meta: overlay.querySelector('#weMeta').value.trim()
+          jp: overlay.querySelector('#weAboutJp').value.trim(),
+          meta: overlay.querySelector('#weAboutMeta').value.trim()
         };
         await publishSiteUpdate(payload, {}, status);
         return;
@@ -953,23 +1235,28 @@
 
       const title = overlay.querySelector('#weTitle').value.trim();
       if(!title){ status.textContent = 'タイトルを入力してください'; return; }
+      const category = overlay.querySelector('#weCategory').value.trim();
       const embed = parseEmbedUrl(overlay.querySelector('#weEmbed').value);
       const files = {};
       if(weState.pendingThumbFile) files['THUMB'] = weState.pendingThumbFile;
       weState.pendingGalleryFiles.forEach((f, i) => {
         files[`GAL${i + 1}`] = f;
       });
+      const catClean = category.replace(/[【】\[\]]/g, '').trim();
+      const derivedSubtitle = (!isNew && work && work.subtitle)
+        ? work.subtitle
+        : (catClean ? `${catClean} @${title}` : title);
       const payload = {
         type: 'work',
         key: weState.key,
         original: (!isNew && work) ? work : null,
-        category: overlay.querySelector('#weCategory').value.trim(),
+        category,
         title,
-        subtitle: overlay.querySelector('#weSubtitle').value.trim(),
-        jp: overlay.querySelector('#weJp').value.trim(),
-        en: overlay.querySelector('#weEn').value.trim(),
-        meta: overlay.querySelector('#weMeta').value.trim(),
-        note: overlay.querySelector('#weNote').value.trim(),
+        subtitle: derivedSubtitle,
+        jp: serializeEditorContent(overlay.querySelector('#weJp')).trim(),
+        en: serializeEditorContent(overlay.querySelector('#weEn')).trim(),
+        meta: (!isNew && work) ? (work.meta || '') : '',
+        note: (!isNew && work) ? (work.note || '') : '',
         embed,
         existingImages: weState.remainingImages,
         currentThumb: (!isNew && work) ? work.thumb : null,
@@ -979,7 +1266,23 @@
       await publishSiteUpdate(payload, files, status);
     });
 
-    const deleteBtn = overlay.querySelector('#weDeleteBtn'); if(deleteBtn){ deleteBtn.addEventListener('click', async () => { const status = overlay.querySelector('#weStatus'); status.innerHTML = ''; const ok = await askConfirmInline(status.parentNode, `「${work.title}」を削除します。よろしいですか？（元に戻せません）`); if(!ok) return; deleteBtn.disabled = true; const success = await publishSiteUpdate({ type: 'delete', key: weState.key }, {}, status); if(success){ setTimeout(() => { overlay.remove(); weState = null; }, 1200); }else{ deleteBtn.disabled = false; } }); } }
+    const deleteBtn = overlay.querySelector('#weDeleteBtn');
+    if(deleteBtn){
+      deleteBtn.addEventListener('click', async () => {
+        const status = overlay.querySelector('#weStatus');
+        status.innerHTML = '';
+        const ok = await askConfirmInline(status.parentNode, `「${work.title}」を削除します。よろしいですか？（元に戻せません）`);
+        if(!ok) return;
+        deleteBtn.disabled = true;
+        const success = await publishSiteUpdate({ type: 'delete', key: weState.key }, {}, status);
+        if(success){
+          setTimeout(() => { overlay.remove(); weState = null; }, 1200);
+        }else{
+          deleteBtn.disabled = false;
+        }
+      });
+    }
+  }
 
   function buildAdminPanel(){
     const panel = document.createElement('div');
