@@ -196,6 +196,7 @@
     display:flex; justify-content:center;
     padding:56px 20px;
     overflow-y:auto;
+    overscroll-behavior:contain;
     z-index:50;
   }
   .modal-overlay[hidden]{ display:none; }
@@ -303,8 +304,9 @@
   }
   @media (max-width:600px){
     .modal-overlay{ padding:48px 32px; }
-    .modal{ padding:30px 20px 36px; }
-    .proj-subtitle{ font-size:19px; }
+    .modal{ padding:64px 20px 36px; }
+    .modal-close-btn{ position:fixed; top:14px; right:14px; z-index:60; }
+    .proj-subtitle{ font-size:19px; padding-right:0; white-space:nowrap; text-wrap:unset; overflow-x:auto; }
     .proj-gallery{ grid-template-columns:1fr; }
   }
 
@@ -414,6 +416,20 @@
     font-size:11px;
     width:100%;
   }
+  #siteSettingsPanel input[type="text"],
+  #siteSettingsPanel textarea{
+    font-size:12px;
+    padding:7px 9px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:var(--bg);
+    color:var(--ink);
+    width:100%;
+    font-family:inherit;
+    margin-bottom:6px;
+    box-sizing:border-box;
+  }
+  #siteSettingsPanel textarea{ resize:vertical; }
   #siteSettingsPanel button{
     font-size:12px;
     font-weight:700;
@@ -773,11 +789,15 @@
       <img class="avatar" src="images/avatar.png" alt="kuugaze">
       <h1 id="profileName">kuugaze</h1>
       <p class="role" id="profileRole">Digital Artist based in Tokyo, Japan</p>
-      <p class="loc">3DCG, VR, AudioVisual</p>
+      <p class="loc" id="profileLoc">3DCG, VR, AudioVisual</p>
       <div class="socials" id="profileSocials">
-        <a href="https://instagram.com/kuugaze" target="_blank" rel="noopener">
+        <a id="profileInstagramLink" href="https://instagram.com/kuugaze" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 0 1-1.38-.9 3.7 3.7 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41 1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63c-.79.31-1.46.72-2.13 1.39A5.9 5.9 0 0 0 .62 4.14C.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.31.79.72 1.46 1.39 2.13a5.9 5.9 0 0 0 2.13 1.39c.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.9 5.9 0 0 0 2.13-1.39 5.9 5.9 0 0 0 1.39-2.13c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.9 5.9 0 0 0-1.39-2.13A5.9 5.9 0 0 0 19.86.63c-.76-.3-1.64-.5-2.91-.56C15.67.01 15.26 0 12 0z"/><path d="M12 5.84A6.16 6.16 0 1 0 18.16 12 6.16 6.16 0 0 0 12 5.84zm0 10.16A4 4 0 1 1 16 12a4 4 0 0 1-4 4zm6.41-10.4a1.44 1.44 0 1 1-1.44-1.44 1.44 1.44 0 0 1 1.44 1.44z"/></svg>
           Instagram
+        </a>
+        <a id="profileXLink" href="#" target="_blank" rel="noopener" style="display:none">
+          <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          X
         </a>
       </div>
     </div>
@@ -801,7 +821,7 @@
 
 <script>
   const GH_REPO = 'kuugaze/kuugaze-portfolio';
-  let ABOUT = { subtitle: 'about', en: '', jp: '', meta: '', showName: true, showRole: true, showInstagram: true };
+  let ABOUT = { subtitle: 'about', en: '', jp: '', meta: '', showName: true, showRole: true, showInstagram: true, name: 'kuugaze', role: 'Digital Artist based in Tokyo, Japan', loc: '3DCG, VR, AudioVisual', instagramUrl: 'https://instagram.com/kuugaze', showX: false, xUrl: '' };
 
   let WORKS = [];
   let WORKS_BY_KEY = {};
@@ -872,6 +892,7 @@
   function closeModal(){
     overlay.hidden = true;
     body.innerHTML = '';
+    document.body.style.overflow = '';
   }
   function openModal(key){
     const d = key === 'about' ? ABOUT : WORKS_BY_KEY[key];
@@ -879,6 +900,7 @@
     body.innerHTML = renderProject(d);
     overlay.hidden = false;
     overlay.scrollTop = 0;
+    document.body.style.overflow = 'hidden';
   }
   grid.addEventListener('click', (e)=>{
     const card = e.target.closest('[data-modal]');
@@ -1626,9 +1648,15 @@
           en: serializeEditorContent(overlay.querySelector('#weAboutEn')).trim(),
           jp: serializeEditorContent(overlay.querySelector('#weAboutJp')).trim(),
           meta: overlay.querySelector('#weAboutMeta').value.trim(),
+          name: ABOUT.name || 'kuugaze',
+          role: ABOUT.role || 'Digital Artist based in Tokyo, Japan',
+          loc: ABOUT.loc || '3DCG, VR, AudioVisual',
+          instagramUrl: ABOUT.instagramUrl || 'https://instagram.com/kuugaze',
           showName: ABOUT.showName !== false,
           showRole: ABOUT.showRole !== false,
           showInstagram: ABOUT.showInstagram !== false,
+          showX: ABOUT.showX === true,
+          xUrl: ABOUT.xUrl || '',
           bannerHeight: ABOUT.bannerHeight || 190,
           siteWidth: ABOUT.siteWidth || 1240,
           newAvatar: null,
@@ -1697,17 +1725,22 @@
 
   function openSiteSettingsPanel(){
     const existing = document.getElementById('siteSettingsPanel');
-    if(existing){ existing.remove(); ssState = null; return; }
+    if(existing) return;
 
     ssState = { pendingAvatarFile: null, pendingBannerFile: null };
     let originalBannerHeightPx = (ABOUT.bannerHeight || 190) + 'px';
     let originalSiteWidthPx = (ABOUT.siteWidth || 1240) + 'px';
+    let originalName = ABOUT.name || 'kuugaze';
+    let originalRole = ABOUT.role || 'Digital Artist based in Tokyo, Japan';
+    let originalLoc = ABOUT.loc || '3DCG, VR, AudioVisual';
+    let originalShowX = ABOUT.showX === true;
+    let originalXUrl = ABOUT.xUrl || '';
 
     const panel = document.createElement('div');
     panel.id = 'siteSettingsPanel';
     panel.innerHTML = `
       <div class="admin-title">サイト設定</div>
-      <div class="admin-desc">実際のサイトを見ながら、プロフィール画像・ヘッダー画像・ヘッダーの高さ・サイトの表示幅・表示項目を調整できます。ボタンを押すと自動でサイトに反映されます。</div>
+      <div class="admin-desc">実際のサイトを見ながら、プロフィール画像・名前・肩書・ヘッダー画像・ヘッダーの高さ・サイトの表示幅・表示項目を調整できます。ボタンを押すと自動でサイトに反映されます。</div>
       <div class="we-field">
         <label>プロフィール画像</label>
         <img class="we-thumb-preview" id="ssAvatarPreview" src="images/avatar.png" style="width:64px;height:64px;border-radius:50%;">
@@ -1719,18 +1752,31 @@
         <input type="file" id="ssBannerFile" accept="image/*">
       </div>
       <div class="we-field">
+        <label>名前</label>
+        <input type="text" id="ssName" value="${escapeAttr(ABOUT.name || 'kuugaze')}">
+      </div>
+      <div class="we-field">
+        <label>肩書（複数行可）</label>
+        <textarea id="ssRole" rows="2">${escapeHtml((ABOUT.role || 'Digital Artist based in Tokyo, Japan') + '\n' + (ABOUT.loc || '3DCG, VR, AudioVisual'))}</textarea>
+      </div>
+      <div class="we-field">
         <label>ヘッダーの高さ<span class="we-range-val" id="ssBannerHeightVal">${ABOUT.bannerHeight || 190}px</span></label>
-        <input type="range" id="ssBannerHeight" min="100" max="400" step="1" value="${ABOUT.bannerHeight || 190}">
+        <input type="range" id="ssBannerHeight" min="0" max="400" step="1" value="${ABOUT.bannerHeight || 190}">
       </div>
       <div class="we-field">
         <label>サイトの表示幅<span class="we-range-val" id="ssSiteWidthVal">${ABOUT.siteWidth || 1240}px</span></label>
-        <input type="range" id="ssSiteWidth" min="900" max="1600" step="10" value="${ABOUT.siteWidth || 1240}">
+        <input type="range" id="ssSiteWidth" min="200" max="3000" step="10" value="${ABOUT.siteWidth || 1240}">
       </div>
       <div class="we-field">
         <label>表示設定</label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowName" ${ABOUT.showName === false ? '' : 'checked'}> 名前を表示</label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowRole" ${ABOUT.showRole === false ? '' : 'checked'}> 肩書を表示</label>
-        <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);"><input type="checkbox" id="ssShowInstagram" ${ABOUT.showInstagram === false ? '' : 'checked'}> Instagramリンクを表示</label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowInstagram" ${ABOUT.showInstagram === false ? '' : 'checked'}> Instagramリンクを表示</label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);"><input type="checkbox" id="ssShowX" ${ABOUT.showX === true ? 'checked' : ''}> X（Twitter）リンクを表示</label>
+      </div>
+      <div class="we-field">
+        <label>X（Twitter）のURL</label>
+        <input type="text" id="ssXUrl" placeholder="https://x.com/yourname" value="${escapeAttr(ABOUT.xUrl || '')}">
       </div>
       <button id="ssSaveBtn">保存して公開する</button>
       <button id="ssCloseBtn" style="background:var(--line);color:var(--ink);">閉じる</button>
@@ -1764,6 +1810,22 @@
       if(realBanner) realBanner.style.backgroundImage = `url("${url}")`;
     });
 
+    const nameInput = panel.querySelector('#ssName');
+    nameInput.addEventListener('input', () => {
+      const el = document.getElementById('profileName');
+      if(el) el.textContent = nameInput.value;
+    });
+
+    const roleInput = panel.querySelector('#ssRole');
+    function applyRoleInputToPage(){
+      const lines = roleInput.value.split('\n');
+      const roleEl = document.getElementById('profileRole');
+      const locEl = document.getElementById('profileLoc');
+      if(roleEl) roleEl.textContent = lines[0] || '';
+      if(locEl) locEl.textContent = lines.slice(1).join(' ');
+    }
+    roleInput.addEventListener('input', applyRoleInputToPage);
+
     const bannerHeightInput = panel.querySelector('#ssBannerHeight');
     const bannerHeightVal = panel.querySelector('#ssBannerHeightVal');
     bannerHeightInput.addEventListener('input', () => {
@@ -1781,18 +1843,34 @@
     const showNameInput = panel.querySelector('#ssShowName');
     const showRoleInput = panel.querySelector('#ssShowRole');
     const showInstagramInput = panel.querySelector('#ssShowInstagram');
+    const showXInput = panel.querySelector('#ssShowX');
+    const xUrlInput = panel.querySelector('#ssXUrl');
     showNameInput.addEventListener('change', () => {
       const el = document.getElementById('profileName');
       if(el) el.style.display = showNameInput.checked ? '' : 'none';
     });
     showRoleInput.addEventListener('change', () => {
-      const el = document.getElementById('profileRole');
-      if(el) el.style.display = showRoleInput.checked ? '' : 'none';
+      const roleEl = document.getElementById('profileRole');
+      const locEl = document.getElementById('profileLoc');
+      if(roleEl) roleEl.style.display = showRoleInput.checked ? '' : 'none';
+      if(locEl) locEl.style.display = showRoleInput.checked ? '' : 'none';
     });
     showInstagramInput.addEventListener('change', () => {
       const el = document.getElementById('profileSocials');
       if(el) el.style.display = showInstagramInput.checked ? '' : 'none';
     });
+    function applyXLinkPreview(){
+      const el = document.getElementById('profileXLink');
+      if(!el) return;
+      if(showXInput.checked && xUrlInput.value.trim()){
+        el.href = xUrlInput.value.trim();
+        el.style.display = '';
+      }else{
+        el.style.display = 'none';
+      }
+    }
+    showXInput.addEventListener('change', applyXLinkPreview);
+    xUrlInput.addEventListener('input', applyXLinkPreview);
 
     panel.querySelector('#ssCloseBtn').addEventListener('click', () => {
       document.documentElement.style.setProperty('--banner-height', originalBannerHeightPx);
@@ -1803,25 +1881,52 @@
       if(realBanner) realBanner.style.backgroundImage = '';
       const profileNameEl = document.getElementById('profileName');
       const profileRoleEl = document.getElementById('profileRole');
+      const profileLocEl = document.getElementById('profileLoc');
       const profileSocialsEl = document.getElementById('profileSocials');
-      if(profileNameEl) profileNameEl.style.display = (ABOUT.showName === false) ? 'none' : '';
-      if(profileRoleEl) profileRoleEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
+      const profileXLinkEl = document.getElementById('profileXLink');
+      if(profileNameEl){
+        profileNameEl.textContent = originalName;
+        profileNameEl.style.display = (ABOUT.showName === false) ? 'none' : '';
+      }
+      if(profileRoleEl){
+        profileRoleEl.textContent = originalRole;
+        profileRoleEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
+      }
+      if(profileLocEl){
+        profileLocEl.textContent = originalLoc;
+        profileLocEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
+      }
       if(profileSocialsEl) profileSocialsEl.style.display = (ABOUT.showInstagram === false) ? 'none' : '';
+      if(profileXLinkEl){
+        if(originalShowX && originalXUrl){
+          profileXLinkEl.href = originalXUrl;
+          profileXLinkEl.style.display = '';
+        }else{
+          profileXLinkEl.style.display = 'none';
+        }
+      }
       panel.remove();
       ssState = null;
     });
 
     panel.querySelector('#ssSaveBtn').addEventListener('click', async () => {
       const status = panel.querySelector('#ssStatus');
+      const roleLines = roleInput.value.split('\n');
       const payload = {
         type: 'about',
         subtitle: ABOUT.subtitle || '',
         en: ABOUT.en || '',
         jp: ABOUT.jp || '',
         meta: ABOUT.meta || '',
+        name: nameInput.value.trim(),
+        role: (roleLines[0] || '').trim(),
+        loc: roleLines.slice(1).join(' ').trim(),
+        instagramUrl: ABOUT.instagramUrl || 'https://instagram.com/kuugaze',
         showName: showNameInput.checked,
         showRole: showRoleInput.checked,
         showInstagram: showInstagramInput.checked,
+        showX: showXInput.checked,
+        xUrl: xUrlInput.value.trim(),
         bannerHeight: parseInt(bannerHeightInput.value, 10),
         siteWidth: parseInt(siteWidthInput.value, 10),
         newAvatar: ssState.pendingAvatarFile ? 'AVATAR' : null,
@@ -1832,13 +1937,24 @@
       if(ssState.pendingBannerFile) files['BANNER'] = ssState.pendingBannerFile;
       const success = await publishSiteUpdate(payload, files, status);
       if(success){
+        ABOUT.name = payload.name;
+        ABOUT.role = payload.role;
+        ABOUT.loc = payload.loc;
+        ABOUT.instagramUrl = payload.instagramUrl;
         ABOUT.showName = payload.showName;
         ABOUT.showRole = payload.showRole;
         ABOUT.showInstagram = payload.showInstagram;
+        ABOUT.showX = payload.showX;
+        ABOUT.xUrl = payload.xUrl;
         ABOUT.bannerHeight = payload.bannerHeight;
         ABOUT.siteWidth = payload.siteWidth;
         originalBannerHeightPx = payload.bannerHeight + 'px';
         originalSiteWidthPx = payload.siteWidth + 'px';
+        originalName = payload.name;
+        originalRole = payload.role;
+        originalLoc = payload.loc;
+        originalShowX = payload.showX;
+        originalXUrl = payload.xUrl;
         ssState.pendingAvatarFile = null;
         ssState.pendingBannerFile = null;
       }
@@ -1855,7 +1971,6 @@
       <div id="adminStatus"></div>
       <hr class="admin-divider">
       <button id="adminAddNewBtn">＋ 新しい作品を追加</button>
-      <button id="adminSiteSettingsBtn">サイト設定</button>
     `;
     document.body.appendChild(panel);
 
@@ -1871,10 +1986,6 @@
 
     panel.querySelector('#adminAddNewBtn').addEventListener('click', () => {
       openWorkEditor(null);
-    });
-
-    panel.querySelector('#adminSiteSettingsBtn').addEventListener('click', () => {
-      openSiteSettingsPanel();
     });
   }
 
@@ -1903,10 +2014,32 @@
       if(about) ABOUT = about;
       const profileNameEl = document.getElementById('profileName');
       const profileRoleEl = document.getElementById('profileRole');
+      const profileLocEl = document.getElementById('profileLoc');
       const profileSocialsEl = document.getElementById('profileSocials');
-      if(profileNameEl) profileNameEl.style.display = (ABOUT.showName === false) ? 'none' : '';
-      if(profileRoleEl) profileRoleEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
+      const profileInstagramLinkEl = document.getElementById('profileInstagramLink');
+      const profileXLinkEl = document.getElementById('profileXLink');
+      if(profileNameEl){
+        profileNameEl.textContent = ABOUT.name || 'kuugaze';
+        profileNameEl.style.display = (ABOUT.showName === false) ? 'none' : '';
+      }
+      if(profileRoleEl){
+        profileRoleEl.textContent = ABOUT.role || 'Digital Artist based in Tokyo, Japan';
+        profileRoleEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
+      }
+      if(profileLocEl){
+        profileLocEl.textContent = ABOUT.loc || '3DCG, VR, AudioVisual';
+        profileLocEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
+      }
       if(profileSocialsEl) profileSocialsEl.style.display = (ABOUT.showInstagram === false) ? 'none' : '';
+      if(profileInstagramLinkEl) profileInstagramLinkEl.href = ABOUT.instagramUrl || 'https://instagram.com/kuugaze';
+      if(profileXLinkEl){
+        if(ABOUT.showX === true && ABOUT.xUrl){
+          profileXLinkEl.href = ABOUT.xUrl;
+          profileXLinkEl.style.display = '';
+        }else{
+          profileXLinkEl.style.display = 'none';
+        }
+      }
       document.documentElement.style.setProperty('--banner-height', (ABOUT.bannerHeight || 190) + 'px');
       document.documentElement.style.setProperty('--site-width', (ABOUT.siteWidth || 1240) + 'px');
       const visibleWorks = isAdmin ? works : works.filter(w => !w.hidden);
@@ -1917,6 +2050,7 @@
         enableEditButtons();
         enableAboutEditButton();
         buildAdminPanel();
+        openSiteSettingsPanel();
       }
     })
     .catch(err => {
