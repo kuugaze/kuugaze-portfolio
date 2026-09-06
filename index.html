@@ -677,7 +677,7 @@
 
 <script>
   const GH_REPO = 'kuugaze/kuugaze-portfolio';
-  let ABOUT = { subtitle: 'about', jp: '', meta: '' };
+  let ABOUT = { subtitle: 'about', en: '', jp: '', meta: '' };
 
   let WORKS = [];
   let WORKS_BY_KEY = {};
@@ -1157,9 +1157,12 @@
           <img class="we-thumb-preview" id="weThumbPreview" src="${isNew ? '' : escapeAttr(work.thumb)}" ${isNew ? 'style="display:none"' : ''}>
           <input type="file" id="weThumbFile" accept="image/*">
         </div>`;
+    const workCatClean = (!isAbout && !isNew) ? (work.category || '').replace(/[【】\[\]]/g, '').trim() : '';
+    const workDefaultSubtitle = (!isAbout && !isNew) ? (workCatClean ? `${workCatClean} @${work.title || ''}` : (work.title || '')) : '';
     const categoryTitleHtml = isAbout ? '' : `
         <div class="we-field"><label>カテゴリ</label><input type="text" id="weCategory" value="${isNew ? '' : escapeAttr(work.category || '')}"></div>
-        <div class="we-field"><label>タイトル（必須）</label><input type="text" id="weTitle" value="${isNew ? '' : escapeAttr(work.title || '')}"></div>`;
+        <div class="we-field"><label>タイトル（必須）</label><input type="text" id="weTitle" value="${isNew ? '' : escapeAttr(work.title || '')}"></div>
+        <div class="we-field"><label>サブタイトル</label><input type="text" id="weSubtitle" value="${isNew ? '' : escapeAttr(work.subtitle || workDefaultSubtitle)}"></div>`;
     const richToolbarHtml = `
         <div class="rte-toolbar">
           <select class="rte-font">
@@ -1211,11 +1214,19 @@
           <input type="file" id="weGalleryFile" accept="image/*" multiple>
         </div>`;
     const subtitleValue = isAbout ? escapeAttr(ABOUT.subtitle || '') : '';
-    const aboutJpValue = isAbout ? escapeHtml(ABOUT.jp || '') : '';
     const aboutMetaValue = isAbout ? escapeHtml(ABOUT.meta || '') : '';
     const aboutFieldsHtml = isAbout ? `
         <div class="we-field"><label>サブタイトル</label><input type="text" id="weSubtitle" value="${subtitleValue}"></div>
-        <div class="we-field"><label>本文（日本語）</label><textarea id="weAboutJp" rows="5">${aboutJpValue}</textarea></div>
+        <div class="we-field">
+          <label>本文（英語）</label>
+          ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-en-toolbar')}
+          <div class="rte-editor" id="weAboutEn"></div>
+        </div>
+        <div class="we-field">
+          <label>本文（日本語）</label>
+          ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-jp-toolbar')}
+          <div class="rte-editor" id="weAboutJp"></div>
+        </div>
         <div class="we-field"><label>メタ情報（任意）</label><textarea id="weAboutMeta" rows="3">${aboutMetaValue}</textarea></div>` : '';
 
     const overlay = document.createElement('div');
@@ -1249,16 +1260,20 @@
 
     function buildPreviewData(){
       if(isAbout){
+        const weAboutEnEl = overlay.querySelector('#weAboutEn');
+        const weAboutJpEl = overlay.querySelector('#weAboutJp');
         return {
           subtitle: (overlay.querySelector('#weSubtitle')?.value || '').trim(),
-          jp: overlay.querySelector('#weAboutJp')?.value || '',
+          en: weAboutEnEl ? serializeEditorContent(weAboutEnEl) : '',
+          jp: weAboutJpEl ? serializeEditorContent(weAboutJpEl) : '',
           meta: overlay.querySelector('#weAboutMeta')?.value || ''
         };
       }
       const title = (overlay.querySelector('#weTitle')?.value || '').trim();
       const category = (overlay.querySelector('#weCategory')?.value || '').trim();
       const catClean = category.replace(/[【】\[\]]/g, '').trim();
-      const subtitle = catClean ? `${catClean} @${title}` : title;
+      const subtitleField = (overlay.querySelector('#weSubtitle')?.value || '').trim();
+      const subtitle = subtitleField || (catClean ? `${catClean} @${title}` : title);
       const weEnEl = overlay.querySelector('#weEn');
       const weJpEl = overlay.querySelector('#weJp');
       const embed = parseEmbedUrl(overlay.querySelector('#weEmbed')?.value || '');
@@ -1290,10 +1305,16 @@
       setupRichEditor(overlay.querySelector('.we-jp-toolbar'), weJpEl, updatePreview);
       overlay.querySelector('#weCategory')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weTitle')?.addEventListener('input', updatePreview);
+      overlay.querySelector('#weSubtitle')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weEmbed')?.addEventListener('input', updatePreview);
     }else{
+      const weAboutEnEl = overlay.querySelector('#weAboutEn');
+      const weAboutJpEl = overlay.querySelector('#weAboutJp');
+      loadIntoEditor(weAboutEnEl, ABOUT.en || '');
+      loadIntoEditor(weAboutJpEl, ABOUT.jp || '');
+      setupRichEditor(overlay.querySelector('.we-about-en-toolbar'), weAboutEnEl, updatePreview);
+      setupRichEditor(overlay.querySelector('.we-about-jp-toolbar'), weAboutJpEl, updatePreview);
       overlay.querySelector('#weSubtitle')?.addEventListener('input', updatePreview);
-      overlay.querySelector('#weAboutJp')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weAboutMeta')?.addEventListener('input', updatePreview);
     }
 
@@ -1354,7 +1375,8 @@
         const payload = {
           type: 'about',
           subtitle: overlay.querySelector('#weSubtitle').value.trim(),
-          jp: overlay.querySelector('#weAboutJp').value.trim(),
+          en: serializeEditorContent(overlay.querySelector('#weAboutEn')).trim(),
+          jp: serializeEditorContent(overlay.querySelector('#weAboutJp')).trim(),
           meta: overlay.querySelector('#weAboutMeta').value.trim()
         };
         await publishSiteUpdate(payload, {}, status);
@@ -1371,16 +1393,15 @@
         files[`GAL${i + 1}`] = f;
       });
       const catClean = category.replace(/[【】\[\]]/g, '').trim();
-      const derivedSubtitle = (!isNew && work && work.subtitle)
-        ? work.subtitle
-        : (catClean ? `${catClean} @${title}` : title);
+      const subtitleField = overlay.querySelector('#weSubtitle').value.trim();
+      const finalSubtitle = subtitleField || (catClean ? `${catClean} @${title}` : title);
       const payload = {
         type: 'work',
         key: weState.key,
         original: (!isNew && work) ? work : null,
         category,
         title,
-        subtitle: derivedSubtitle,
+        subtitle: finalSubtitle,
         jp: serializeEditorContent(overlay.querySelector('#weJp')).trim(),
         en: serializeEditorContent(overlay.querySelector('#weEn')).trim(),
         meta: (!isNew && work) ? (work.meta || '') : '',
