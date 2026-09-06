@@ -298,6 +298,9 @@
     display:block;
     border-radius:2px;
   }
+  .proj-gallery-single{
+    grid-template-columns:1fr;
+  }
   @media (max-width:600px){
     .modal-overlay{ padding:48px 32px; }
     .modal{ padding:30px 20px 36px; }
@@ -636,6 +639,66 @@
     color:#fff;
     cursor:pointer;
   }
+
+  #avatarCropOverlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,.75);
+    display:flex; align-items:center; justify-content:center;
+    z-index:400;
+  }
+  #avatarCropOverlay[hidden]{ display:none; }
+  .crop-modal{
+    background:var(--card-bg);
+    color:var(--ink);
+    border-radius:8px;
+    padding:20px;
+    box-shadow:0 24px 70px rgba(0,0,0,.45);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+  }
+  .crop-title{
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .crop-canvas-wrap{
+    position:relative;
+    width:300px; height:300px;
+    border-radius:4px;
+    overflow:hidden;
+    background:#000;
+    cursor:grab;
+    touch-action:none;
+  }
+  .crop-canvas-wrap:active{ cursor:grabbing; }
+  .crop-canvas-wrap canvas{ display:block; }
+  .crop-mask{
+    position:absolute; inset:0;
+    pointer-events:none;
+  }
+  .crop-mask::before{
+    content:'';
+    position:absolute;
+    left:50%; top:50%;
+    width:260px; height:260px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    box-shadow:0 0 0 9999px rgba(0,0,0,.55);
+  }
+  .crop-zoom{ width:300px; }
+  .crop-actions{ display:flex; gap:8px; }
+  .crop-actions button{
+    font-size:12px;
+    font-weight:700;
+    padding:9px 14px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+  }
+  .crop-apply-btn{ background:var(--accent); color:#fff; }
+  .crop-cancel-btn{ background:var(--line); color:var(--ink); }
 </style>
 </head>
 <body>
@@ -647,10 +710,10 @@
 
     <div class="profile">
       <img class="avatar" src="images/avatar.png" alt="kuugaze">
-      <h1>kuugaze</h1>
-      <p class="role">Digital Artist based in Tokyo, Japan</p>
+      <h1 id="profileName">kuugaze</h1>
+      <p class="role" id="profileRole">Digital Artist based in Tokyo, Japan</p>
       <p class="loc">3DCG, VR, AudioVisual</p>
-      <div class="socials">
+      <div class="socials" id="profileSocials">
         <a href="https://instagram.com/kuugaze" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 0 1-1.38-.9 3.7 3.7 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41 1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63c-.79.31-1.46.72-2.13 1.39A5.9 5.9 0 0 0 .62 4.14C.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.31.79.72 1.46 1.39 2.13a5.9 5.9 0 0 0 2.13 1.39c.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.9 5.9 0 0 0 2.13-1.39 5.9 5.9 0 0 0 1.39-2.13c.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.9 5.9 0 0 0-1.39-2.13A5.9 5.9 0 0 0 19.86.63c-.76-.3-1.64-.5-2.91-.56C15.67.01 15.26 0 12 0z"/><path d="M12 5.84A6.16 6.16 0 1 0 18.16 12 6.16 6.16 0 0 0 12 5.84zm0 10.16A4 4 0 1 1 16 12a4 4 0 0 1-4 4zm6.41-10.4a1.44 1.44 0 1 1-1.44-1.44 1.44 1.44 0 0 1 1.44 1.44z"/></svg>
           Instagram
@@ -677,7 +740,7 @@
 
 <script>
   const GH_REPO = 'kuugaze/kuugaze-portfolio';
-  let ABOUT = { subtitle: 'about', en: '', jp: '', meta: '' };
+  let ABOUT = { subtitle: 'about', en: '', jp: '', meta: '', showName: true, showRole: true, showInstagram: true };
 
   let WORKS = [];
   let WORKS_BY_KEY = {};
@@ -723,9 +786,10 @@
       : `https://player.vimeo.com/video/${work.embed.id}${work.embed.h ? '?h='+work.embed.h : ''}`;
     return `<div class="proj-embed"><iframe src="${src}" title="video" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
   }
-  function galleryHtml(images){
+  function galleryHtml(images, layout){
     if(!images || !images.length) return '';
-    return `<div class="proj-gallery">${images.map(src=>`<img src="${src}" alt="" loading="lazy">`).join('')}</div>`;
+    const cls = layout === 'single' ? 'proj-gallery proj-gallery-single' : 'proj-gallery';
+    return `<div class="${cls}">${images.map(src=>`<img src="${src}" alt="" loading="lazy">`).join('')}</div>`;
   }
   function renderProject(d){
     let html = `<div class="proj-subtitle">${escapeHtml(d.subtitle || '')}</div>`;
@@ -736,7 +800,7 @@
     if(d.meta) html += `<div class="proj-meta">${renderBody(d.meta)}</div>`;
     if(d.note) html += `<div class="proj-note">${renderBody(d.note)}</div>`;
     if(d.embed) html += embedHtml(d);
-    if(d.images) html += galleryHtml(d.images);
+    if(d.images) html += galleryHtml(d.images, d.galleryLayout);
     return html;
   }
 
@@ -1035,6 +1099,117 @@
     }
   }
 
+  // --- Profile-image cropper: lets the admin pick a photo and crop it to a
+  // square before it's uploaded, so the circular avatar always frames
+  // correctly regardless of the source image's shape. onDone receives a
+  // cropped PNG Blob, or null if the admin cancelled. ---
+  function openAvatarCropper(file, onDone){
+    const existing = document.getElementById('avatarCropOverlay');
+    if(existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'avatarCropOverlay';
+    overlay.innerHTML = `
+      <div class="crop-modal">
+        <div class="crop-title">プロフィール画像をトリミング</div>
+        <div class="crop-canvas-wrap" id="cropCanvasWrap">
+          <canvas id="cropCanvas" width="300" height="300"></canvas>
+          <div class="crop-mask"></div>
+        </div>
+        <input type="range" class="crop-zoom" id="cropZoom" min="1" max="3" step="0.01" value="1">
+        <div class="crop-actions">
+          <button type="button" class="crop-apply-btn" id="cropApplyBtn">適用</button>
+          <button type="button" class="crop-cancel-btn" id="cropCancelBtn">キャンセル</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const C = 300;
+    const canvas = overlay.querySelector('#cropCanvas');
+    const ctx = canvas.getContext('2d');
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    let baseScale = 1, zoom = 1, offsetX = 0, offsetY = 0, drawW = 0, drawH = 0;
+
+    function recompute(){
+      const scale = baseScale * zoom;
+      drawW = img.naturalWidth * scale;
+      drawH = img.naturalHeight * scale;
+    }
+    function clampOffsets(){
+      offsetX = Math.min(0, Math.max(offsetX, C - drawW));
+      offsetY = Math.min(0, Math.max(offsetY, C - drawH));
+    }
+    function draw(){
+      ctx.clearRect(0, 0, C, C);
+      ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+    }
+
+    img.onload = () => {
+      baseScale = Math.max(C / img.naturalWidth, C / img.naturalHeight);
+      zoom = 1;
+      recompute();
+      offsetX = (C - drawW) / 2;
+      offsetY = (C - drawH) / 2;
+      draw();
+    };
+    img.src = objectUrl;
+
+    const wrap = overlay.querySelector('#cropCanvasWrap');
+    let dragging = false, lastX = 0, lastY = 0;
+    wrap.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      lastX = e.clientX; lastY = e.clientY;
+      wrap.setPointerCapture(e.pointerId);
+    });
+    wrap.addEventListener('pointermove', (e) => {
+      if(!dragging) return;
+      offsetX += e.clientX - lastX;
+      offsetY += e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      clampOffsets();
+      draw();
+    });
+    wrap.addEventListener('pointerup', () => { dragging = false; });
+    wrap.addEventListener('pointercancel', () => { dragging = false; });
+
+    const zoomSlider = overlay.querySelector('#cropZoom');
+    zoomSlider.addEventListener('input', () => {
+      // Keep the point under the canvas center stable while zooming.
+      const cx = C / 2, cy = C / 2;
+      const relX = drawW ? (cx - offsetX) / drawW : 0.5;
+      const relY = drawH ? (cy - offsetY) / drawH : 0.5;
+      zoom = parseFloat(zoomSlider.value);
+      recompute();
+      offsetX = cx - relX * drawW;
+      offsetY = cy - relY * drawH;
+      clampOffsets();
+      draw();
+    });
+
+    function cleanup(){
+      URL.revokeObjectURL(objectUrl);
+      overlay.remove();
+    }
+    overlay.querySelector('#cropCancelBtn').addEventListener('click', () => {
+      cleanup();
+      onDone(null);
+    });
+    overlay.querySelector('#cropApplyBtn').addEventListener('click', () => {
+      const OUT = 480;
+      const outCanvas = document.createElement('canvas');
+      outCanvas.width = OUT; outCanvas.height = OUT;
+      const outCtx = outCanvas.getContext('2d');
+      const f = OUT / C;
+      outCtx.drawImage(img, offsetX * f, offsetY * f, drawW * f, drawH * f);
+      outCanvas.toBlob((blob) => {
+        cleanup();
+        onDone(blob);
+      }, 'image/png');
+    });
+  }
+
   // --- Publish via the kuugaze-site-update Cloudflare Worker: the admin
   // panel POSTs the payload (plus any new image files) straight to the
   // Worker, which authenticates the request and writes works.json /
@@ -1147,6 +1322,7 @@
     weState = {
       key: isAbout ? null : (isNew ? null : work.key),
       pendingThumbFile: null,
+      pendingAvatarFile: null,
       remainingImages: (!isAbout && !isNew && work.images) ? [...work.images] : [],
       pendingGalleryFiles: []
     };
@@ -1212,10 +1388,32 @@
           <label>ギャラリー画像</label>
           <div class="we-gallery-list" id="weGalleryList"></div>
           <input type="file" id="weGalleryFile" accept="image/*" multiple>
+        </div>
+        <div class="we-field">
+          <label>ギャラリー表示形式</label>
+          <select id="weGalleryLayout">
+            <option value="grid" ${(!isNew && work && work.galleryLayout === 'single') ? '' : 'selected'}>2列（グリッド）</option>
+            <option value="single" ${(!isNew && work && work.galleryLayout === 'single') ? 'selected' : ''}>1列（横幅いっぱい）</option>
+          </select>
         </div>`;
     const subtitleValue = isAbout ? escapeAttr(ABOUT.subtitle || '') : '';
     const aboutMetaValue = isAbout ? escapeHtml(ABOUT.meta || '') : '';
+    const avatarFieldHtml = isAbout ? `
+        <div class="we-field">
+          <label>プロフィール画像</label>
+          <img class="we-thumb-preview" id="weAvatarPreview" src="images/avatar.png" style="border-radius:50%;">
+          <input type="file" id="weAvatarFile" accept="image/*">
+        </div>` : '';
+    const visibilityFieldHtml = isAbout ? `
+        <div class="we-field">
+          <label>表示設定</label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="weShowName" ${ABOUT.showName === false ? '' : 'checked'}> 名前を表示</label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="weShowRole" ${ABOUT.showRole === false ? '' : 'checked'}> 肩書を表示</label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);"><input type="checkbox" id="weShowInstagram" ${ABOUT.showInstagram === false ? '' : 'checked'}> Instagramリンクを表示</label>
+        </div>` : '';
     const aboutFieldsHtml = isAbout ? `
+        ${avatarFieldHtml}
+        ${visibilityFieldHtml}
         <div class="we-field"><label>サブタイトル</label><input type="text" id="weSubtitle" value="${subtitleValue}"></div>
         <div class="we-field">
           <label>本文（英語）</label>
@@ -1287,7 +1485,8 @@
         meta: (!isNew && work) ? (work.meta || '') : '',
         note: (!isNew && work) ? (work.note || '') : '',
         embed,
-        images
+        images,
+        galleryLayout: overlay.querySelector('#weGalleryLayout')?.value || 'grid'
       };
     }
     function updatePreview(){
@@ -1307,6 +1506,7 @@
       overlay.querySelector('#weTitle')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weSubtitle')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weEmbed')?.addEventListener('input', updatePreview);
+      overlay.querySelector('#weGalleryLayout')?.addEventListener('change', updatePreview);
     }else{
       const weAboutEnEl = overlay.querySelector('#weAboutEn');
       const weAboutJpEl = overlay.querySelector('#weAboutJp');
@@ -1316,6 +1516,18 @@
       setupRichEditor(overlay.querySelector('.we-about-jp-toolbar'), weAboutJpEl, updatePreview);
       overlay.querySelector('#weSubtitle')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weAboutMeta')?.addEventListener('input', updatePreview);
+
+      const avatarFileInput = overlay.querySelector('#weAvatarFile');
+      avatarFileInput?.addEventListener('change', () => {
+        const f = avatarFileInput.files[0];
+        if(!f) return;
+        openAvatarCropper(f, (blob) => {
+          avatarFileInput.value = '';
+          if(!blob) return;
+          weState.pendingAvatarFile = blob;
+          overlay.querySelector('#weAvatarPreview').src = URL.createObjectURL(blob);
+        });
+      });
     }
 
     function renderGalleryList(){
@@ -1377,9 +1589,15 @@
           subtitle: overlay.querySelector('#weSubtitle').value.trim(),
           en: serializeEditorContent(overlay.querySelector('#weAboutEn')).trim(),
           jp: serializeEditorContent(overlay.querySelector('#weAboutJp')).trim(),
-          meta: overlay.querySelector('#weAboutMeta').value.trim()
+          meta: overlay.querySelector('#weAboutMeta').value.trim(),
+          showName: overlay.querySelector('#weShowName').checked,
+          showRole: overlay.querySelector('#weShowRole').checked,
+          showInstagram: overlay.querySelector('#weShowInstagram').checked,
+          newAvatar: weState.pendingAvatarFile ? 'AVATAR' : null
         };
-        await publishSiteUpdate(payload, {}, status);
+        const files = {};
+        if(weState.pendingAvatarFile) files['AVATAR'] = weState.pendingAvatarFile;
+        await publishSiteUpdate(payload, files, status);
         return;
       }
 
@@ -1410,7 +1628,8 @@
         existingImages: weState.remainingImages,
         currentThumb: (!isNew && work) ? work.thumb : null,
         newThumbnail: weState.pendingThumbFile ? 'THUMB' : null,
-        newGalleryImages: weState.pendingGalleryFiles.map((f, i) => `GAL${i + 1}`)
+        newGalleryImages: weState.pendingGalleryFiles.map((f, i) => `GAL${i + 1}`),
+        galleryLayout: overlay.querySelector('#weGalleryLayout').value
       };
       await publishSiteUpdate(payload, files, status);
     });
@@ -1484,6 +1703,12 @@
       WORKS = works;
       WORKS_BY_KEY = Object.fromEntries(works.map(w => [w.key, w]));
       if(about) ABOUT = about;
+      const profileNameEl = document.getElementById('profileName');
+      const profileRoleEl = document.getElementById('profileRole');
+      const profileSocialsEl = document.getElementById('profileSocials');
+      if(profileNameEl) profileNameEl.style.display = (ABOUT.showName === false) ? 'none' : '';
+      if(profileRoleEl) profileRoleEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
+      if(profileSocialsEl) profileSocialsEl.style.display = (ABOUT.showInstagram === false) ? 'none' : '';
       const visibleWorks = isAdmin ? works : works.filter(w => !w.hidden);
       grid.insertAdjacentHTML('beforeend', visibleWorks.map(w => cardHtml(w, isAdmin)).join(''));
       if(isAdmin){
