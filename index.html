@@ -920,7 +920,7 @@
       : '';
     const hiddenBadge = (isAdminCard && work.hidden) ? '<span class="hidden-badge">非公開</span>' : '';
     return `<div class="card${hiddenClass}" data-modal="${work.key}">`
-      + `<div class="thumb">${editBtn}${toggleBtn}<img src="${work.thumb}" alt="" loading="lazy"></div>`
+      + `<div class="thumb">${editBtn}${toggleBtn}<img src="${resolveImgSrc(work.thumb)}" alt="" loading="lazy"></div>`
       + `<div class="caption"><span class="cap-label">${escapeHtml(work.category || '')}</span><span class="cap-title">${escapeHtml(work.title || '')}</span>${hiddenBadge}</div>`
       + `</div>`;
   }
@@ -934,7 +934,7 @@
   function galleryHtml(images, layout){
     if(!images || !images.length) return '';
     const cls = layout === 'single' ? 'proj-gallery proj-gallery-single' : 'proj-gallery';
-    return `<div class="${cls}">${images.map(src=>`<img src="${src}" alt="" loading="lazy">`).join('')}</div>`;
+    return `<div class="${cls}">${images.map(src=>`<img src="${resolveImgSrc(src)}" alt="" loading="lazy">`).join('')}</div>`;
   }
   function renderProject(d){
     const subtitleEn = d.subtitleEn || d.subtitle || '';
@@ -1438,6 +1438,45 @@
     return data;
   }
 
+  // --- Hidden works' image FILES are no longer public (moved server-side
+  // into private Worker/KV storage). The admin panel needs to still show
+  // their thumbnails/gallery images, so each is fetched here via an
+  // authenticated request and turned into a local blob: URL -- never a
+  // plain public URL. Visible works' images are untouched and load from
+  // GitHub Pages as before (no extra request, no admin-only cost). ---
+  const PRIVATE_IMAGE_URLS = new Map();
+  function resolveImgSrc(path){
+    return PRIVATE_IMAGE_URLS.get(path) || path;
+  }
+  async function fetchPrivateImage(path, secret){
+    const form = new FormData();
+    form.append('payload', JSON.stringify({ type: 'get_image', path }));
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${secret}` },
+      body: form
+    });
+    if(!res.ok) throw new Error('get_image fetch failed: ' + res.status);
+    return res.blob();
+  }
+  async function preloadHiddenImages(works, secret){
+    const hidden = works.filter(w => w.hidden);
+    const paths = new Set();
+    hidden.forEach(w => {
+      if(w.thumb) paths.add(w.thumb);
+      (w.images || []).forEach(p => paths.add(p));
+    });
+    await Promise.all([...paths].map(async path => {
+      if(PRIVATE_IMAGE_URLS.has(path)) return;
+      try{
+        const blob = await fetchPrivateImage(path, secret);
+        PRIVATE_IMAGE_URLS.set(path, URL.createObjectURL(blob));
+      }catch(e){
+        console.error('Failed to preload hidden image', path, e);
+      }
+    }));
+  }
+
   function showAdminGate(){
     return new Promise((resolve) => {
       const overlay = document.createElement('div');
@@ -1604,7 +1643,7 @@
     const thumbFieldHtml = isAbout ? '' : `
         <div class="we-field">
           <label>サムネイル</label>
-          <img class="we-thumb-preview" id="weThumbPreview" src="${isNew ? '' : escapeAttr(work.thumb)}" ${isNew ? 'style="display:none"' : ''}>
+          <img class="we-thumb-preview" id="weThumbPreview" src="${isNew ? '' : escapeAttr(resolveImgSrc(work.thumb))}" ${isNew ? 'style="display:none"' : ''}>
           <input type="file" id="weThumbFile" accept="image/*">
         </div>`;
     const workCatClean = (!isAbout && !isNew) ? (work.category || '').replace(/[【】\[\]]/g, '').trim() : '';
@@ -1812,7 +1851,7 @@
       if(!list) return;
       let html = '';
       weState.remainingImages.forEach((url, i) => {
-        html += `<div class="we-gallery-item"><img src="${escapeAttr(url)}" alt=""><button type="button" data-kind="existing" data-idx="${i}">×</button></div>`;
+        html += `<div class="we-gallery-item"><img src="${escapeAttr(resolveImgSrc(url))}" alt=""><button type="button" data-kind="existing" data-idx="${i}">×</button></div>`;
       });
       weState.pendingGalleryFiles.forEach((f, i) => {
         html += `<div class="we-gallery-item"><img src="${URL.createObjectURL(f)}" alt=""><button type="button" data-kind="pending" data-idx="${i}">×</button></div>`;
@@ -2273,6 +2312,10 @@
           const secret = localStorage.getItem(ADMIN_SECRET_KEY);
           const full = await fetchFullDataFromWorker(secret);
           if(full && Array.isArray(full.works)) works = full.works;
+          // Hidden works' image files are private too -- fetch them into
+          // blob: URLs before rendering so their thumbnails/galleries show
+          // up in the admin panel despite never having a public URL.
+          await preloadHiddenImages(works, secret);
         }catch(e){
           console.error('Failed to load full admin data', e);
         }
