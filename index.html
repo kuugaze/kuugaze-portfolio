@@ -1265,8 +1265,16 @@
         if(!savedRange || savedRange.collapsed){
           return;
         }
-        const url = await askLinkUrlInline(toolbarEl.parentNode);
+        let url = await askLinkUrlInline(toolbarEl.parentNode);
         if(!url) return;
+        // If the admin typed a bare domain (no scheme, e.g. "example.com"
+        // instead of "https://example.com"), the browser saves it as a
+        // relative URL -- it looks fine in the editor but 404s once
+        // clicked on the live site. Auto-prepend https:// unless the
+        // input already has a scheme, or is an in-page path/anchor.
+        if(!/^([a-z][a-z0-9+.-]*:|\/|#)/i.test(url)){
+          url = 'https://' + url;
+        }
         focusEditor();
         document.execCommand('createLink', false, url);
         // Force the newly-created link(s) to the requested link color
