@@ -912,9 +912,24 @@
   function looksLikeRichHtml(s){
     return /<\/?(b|i|em|strong|span|a|br|div|p|u|font)[ >]/i.test(s || '');
   }
+  // Manually-inserted rich-text links (via the caption editor's リンク
+  // button) were saved without target/rel, so they navigated away in the
+  // same tab. This normalizes every <a> in rendered body HTML -- old,
+  // already-saved links included -- to always open in a new tab, without
+  // needing every past caption to be re-edited and re-saved.
+  function ensureLinksOpenNewTab(html){
+    if(!html || html.indexOf('<a') === -1) return html;
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    div.querySelectorAll('a').forEach(a => {
+      a.setAttribute('target', '_blank');
+      if(!a.getAttribute('rel')) a.setAttribute('rel', 'noopener');
+    });
+    return div.innerHTML;
+  }
   function renderBody(text){
     if(!text) return '';
-    return looksLikeRichHtml(text) ? text : fmt(text);
+    return ensureLinksOpenNewTab(looksLikeRichHtml(text) ? text : fmt(text));
   }
   function cardHtml(work, isAdminCard){
     const hiddenClass = (isAdminCard && work.hidden) ? ' is-hidden' : '';
