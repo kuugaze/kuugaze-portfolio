@@ -236,7 +236,9 @@
     line-height:1.4;
     margin:0 0 18px;
     padding-right:40px;
-    text-wrap:balance;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .proj-heading2{
     font-style:italic;
@@ -304,9 +306,9 @@
   }
   @media (max-width:600px){
     .modal-overlay{ padding:48px 32px; }
-    .modal{ padding:64px 20px 36px; }
+    .modal{ padding:20px 20px 36px; }
     .modal-close-btn{ position:fixed; top:14px; right:14px; z-index:60; }
-    .proj-subtitle{ font-size:19px; padding-right:0; white-space:nowrap; overflow-x:auto; }
+    .proj-subtitle{ font-size:19px; padding-right:44px; white-space:normal; overflow:visible; text-overflow:clip; }
     .proj-gallery{ grid-template-columns:1fr; }
   }
 
@@ -889,10 +891,27 @@
   const body = document.getElementById('modalBody');
   const grid = document.getElementById('grid');
 
+  let modalLockScrollY = 0;
+  function lockBodyScroll(){
+    modalLockScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.position = 'fixed';
+    document.body.style.top = (-modalLockScrollY) + 'px';
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+  }
+  function unlockBodyScroll(){
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    window.scrollTo(0, modalLockScrollY);
+  }
   function closeModal(){
     overlay.hidden = true;
     body.innerHTML = '';
-    document.body.style.overflow = '';
+    unlockBodyScroll();
   }
   function openModal(key){
     const d = key === 'about' ? ABOUT : WORKS_BY_KEY[key];
@@ -900,7 +919,7 @@
     body.innerHTML = renderProject(d);
     overlay.hidden = false;
     overlay.scrollTop = 0;
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
   }
   grid.addEventListener('click', (e)=>{
     const card = e.target.closest('[data-modal]');
@@ -1354,12 +1373,37 @@
     return secret;
   }
 
+  async function fetchLiveData(){
+    const bust = Date.now();
+    const [works, about] = await Promise.all([
+      fetch('works.json?_=' + bust, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('about.json?_=' + bust, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
+    ]);
+    return { works, about };
+  }
+  async function confirmReflection(preSnapshot, statusEl){
+    if(!statusEl || preSnapshot === null) return;
+    const maxTries = 20, intervalMs = 3000;
+    for(let i = 0; i < maxTries; i++){
+      await new Promise(r => setTimeout(r, intervalMs));
+      let cur = null;
+      try{ cur = JSON.stringify(await fetchLiveData()); }catch(e){}
+      if(cur !== null && cur !== preSnapshot){
+        statusEl.textContent = '公開が完了し、サイトに反映されました。';
+        return;
+      }
+      statusEl.textContent = `公開処理中…サイトへの反映を確認しています（${i + 1}/${maxTries}）`;
+    }
+    statusEl.textContent = '公開処理は完了しましたが、反映確認に時間がかかっています。少し時間をおいてページを再読み込みしてご確認ください。';
+  }
   async function publishSiteUpdate(payload, files, statusEl){
     const secret = await getAdminSecret(statusEl);
     if(!secret){
       if(statusEl) statusEl.textContent = 'シークレットキーが入力されなかったため、公開を中止しました。';
       return false;
     }
+    let preSnapshot = null;
+    try{ preSnapshot = JSON.stringify(await fetchLiveData()); }catch(e){}
     const form = new FormData();
     form.append('payload', JSON.stringify(payload));
     if(files){
@@ -1377,7 +1421,8 @@
       let data = {};
       try{ data = await res.json(); }catch(e){}
       if(res.ok && data.ok){
-        if(statusEl) statusEl.textContent = data.message || '公開しました。数分でサイトに反映されます。';
+        if(statusEl) statusEl.textContent = data.message || '公開処理が完了しました。サイトへの反映を確認しています…';
+        confirmReflection(preSnapshot, statusEl);
         return true;
       }
       if(res.status === 401){
@@ -1740,7 +1785,6 @@
     panel.id = 'siteSettingsPanel';
     panel.innerHTML = `
       <div class="admin-title">サイト設定</div>
-      <div class="admin-desc">実際のサイトを見ながら、プロフィール画像・名前・肩書・ヘッダー画像・ヘッダーの高さ・サイトの表示幅・表示項目を調整できます。ボタンを押すと自動でサイトに反映されます。</div>
       <div class="we-field">
         <label>プロフィール画像</label>
         <img class="we-thumb-preview" id="ssAvatarPreview" src="images/avatar.png" style="width:64px;height:64px;border-radius:50%;">
@@ -2005,8 +2049,8 @@
   }
 
   Promise.all([
-    fetch('works.json').then(r => r.json()),
-    fetch('about.json').then(r => r.ok ? r.json() : null).catch(() => null)
+    fetch('works.json?_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()),
+    fetch('about.json?_=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
   ])
     .then(([works, about]) => {
       WORKS = works;
