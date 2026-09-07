@@ -236,6 +236,7 @@
     line-height:1.4;
     margin:0 0 18px;
     padding-right:40px;
+    white-space:pre-wrap;
     display:-webkit-box;
     -webkit-line-clamp:3;
     -webkit-box-orient:vertical;
@@ -1387,37 +1388,12 @@
     return secret;
   }
 
-  async function fetchLiveData(){
-    const bust = Date.now();
-    const [works, about] = await Promise.all([
-      fetch('works.json?_=' + bust, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('about.json?_=' + bust, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
-    ]);
-    return { works, about };
-  }
-  async function confirmReflection(preSnapshot, statusEl){
-    if(!statusEl || preSnapshot === null) return;
-    const maxTries = 20, intervalMs = 3000;
-    for(let i = 0; i < maxTries; i++){
-      await new Promise(r => setTimeout(r, intervalMs));
-      let cur = null;
-      try{ cur = JSON.stringify(await fetchLiveData()); }catch(e){}
-      if(cur !== null && cur !== preSnapshot){
-        statusEl.textContent = '公開が完了し、サイトに反映されました。';
-        return;
-      }
-      statusEl.textContent = `公開処理中…サイトへの反映を確認しています（${i + 1}/${maxTries}）`;
-    }
-    statusEl.textContent = '公開処理は完了しましたが、反映確認に時間がかかっています。少し時間をおいてページを再読み込みしてご確認ください。';
-  }
   async function publishSiteUpdate(payload, files, statusEl){
     const secret = await getAdminSecret(statusEl);
     if(!secret){
       if(statusEl) statusEl.textContent = 'シークレットキーが入力されなかったため、公開を中止しました。';
       return false;
     }
-    let preSnapshot = null;
-    try{ preSnapshot = JSON.stringify(await fetchLiveData()); }catch(e){}
     const form = new FormData();
     form.append('payload', JSON.stringify(payload));
     if(files){
@@ -1435,8 +1411,7 @@
       let data = {};
       try{ data = await res.json(); }catch(e){}
       if(res.ok && data.ok){
-        if(statusEl) statusEl.textContent = data.message || '公開処理が完了しました。サイトへの反映を確認しています…';
-        confirmReflection(preSnapshot, statusEl);
+        if(statusEl) statusEl.textContent = data.message || '公開しました。数分でサイトに反映されます。';
         return true;
       }
       if(res.status === 401){
@@ -1516,13 +1491,13 @@
           <button type="button" class="rte-btn" data-cmd="link">🔗リンク</button>
         </div>`;
     const enJpEmbedGalleryHtml = isAbout ? '' : `
-        <div class="we-field"><label>サブタイトル（英語）</label><input type="text" id="weSubtitleEn" value="${isNew ? '' : escapeAttr(work.subtitleEn || work.subtitle || workDefaultSubtitle)}"></div>
+        <div class="we-field"><label>サブタイトル（英語）</label><textarea id="weSubtitleEn" rows="3">${isNew ? '' : escapeHtml(work.subtitleEn || work.subtitle || workDefaultSubtitle)}</textarea></div>
         <div class="we-field">
           <label>本文（英語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-en-toolbar')}
           <div class="rte-editor" id="weEn"></div>
         </div>
-        <div class="we-field"><label>サブタイトル（日本語）</label><input type="text" id="weSubtitleJp" value="${isNew ? '' : escapeAttr(work.subtitleJp || work.subtitle || workDefaultSubtitle)}"></div>
+        <div class="we-field"><label>サブタイトル（日本語）</label><textarea id="weSubtitleJp" rows="3">${isNew ? '' : escapeHtml(work.subtitleJp || work.subtitle || workDefaultSubtitle)}</textarea></div>
         <div class="we-field">
           <label>本文（日本語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-jp-toolbar')}
@@ -1541,17 +1516,17 @@
             <option value="single" ${(!isNew && work && work.galleryLayout === 'single') ? 'selected' : ''}>1列（横幅いっぱい）</option>
           </select>
         </div>`;
-    const subtitleEnValue = isAbout ? escapeAttr(ABOUT.subtitleEn || ABOUT.subtitle || '') : '';
-    const subtitleJpValue = isAbout ? escapeAttr(ABOUT.subtitleJp || ABOUT.subtitle || '') : '';
+    const subtitleEnValue = isAbout ? escapeHtml(ABOUT.subtitleEn || ABOUT.subtitle || '') : '';
+    const subtitleJpValue = isAbout ? escapeHtml(ABOUT.subtitleJp || ABOUT.subtitle || '') : '';
     const aboutMetaValue = isAbout ? escapeHtml(ABOUT.meta || '') : '';
     const aboutFieldsHtml = isAbout ? `
-        <div class="we-field"><label>サブタイトル（英語）</label><input type="text" id="weSubtitleEn" value="${subtitleEnValue}"></div>
+        <div class="we-field"><label>サブタイトル（英語）</label><textarea id="weSubtitleEn" rows="3">${subtitleEnValue}</textarea></div>
         <div class="we-field">
           <label>本文（英語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-en-toolbar')}
           <div class="rte-editor" id="weAboutEn"></div>
         </div>
-        <div class="we-field"><label>サブタイトル（日本語）</label><input type="text" id="weSubtitleJp" value="${subtitleJpValue}"></div>
+        <div class="we-field"><label>サブタイトル（日本語）</label><textarea id="weSubtitleJp" rows="3">${subtitleJpValue}</textarea></div>
         <div class="we-field">
           <label>本文（日本語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-jp-toolbar')}
