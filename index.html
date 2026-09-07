@@ -1421,6 +1421,23 @@
     }
   }
 
+  // --- Fetch the FULL works data (including hidden works) for the admin
+  // panel. The public works.json served by GitHub Pages never contains
+  // hidden works at all -- only this authenticated request can see them. ---
+  async function fetchFullDataFromWorker(secret){
+    const form = new FormData();
+    form.append('payload', JSON.stringify({ type: 'full_data' }));
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${secret}` },
+      body: form
+    });
+    if(!res.ok) throw new Error('full_data fetch failed: ' + res.status);
+    const data = await res.json();
+    if(!data || !data.ok) throw new Error((data && data.error) || 'full_data fetch failed');
+    return data;
+  }
+
   function showAdminGate(){
     return new Promise((resolve) => {
       const overlay = document.createElement('div');
@@ -2214,9 +2231,8 @@
     fetch('works.json?_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()),
     fetch('about.json?_=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
   ])
-    .then(async ([works, about]) => {
-      WORKS = works;
-      WORKS_BY_KEY = Object.fromEntries(works.map(w => [w.key, w]));
+    .then(async ([publicWorks, about]) => {
+      let works = publicWorks;
       if(about) ABOUT = about;
       const profileNameEl = document.getElementById('profileName');
       const profileRoleEl = document.getElementById('profileRole');
@@ -2249,6 +2265,20 @@
       document.documentElement.style.setProperty('--banner-height', (ABOUT.bannerHeight || 190) + 'px');
       document.documentElement.style.setProperty('--site-width', (ABOUT.siteWidth || 1240) + 'px');
       const adminVerified = isAdmin ? await verifyAdminAccess() : false;
+      if(adminVerified){
+        // The public works.json above never contains hidden works -- fetch
+        // the full data (including hidden works) from the Worker instead,
+        // now that the secret has been verified.
+        try{
+          const secret = localStorage.getItem(ADMIN_SECRET_KEY);
+          const full = await fetchFullDataFromWorker(secret);
+          if(full && Array.isArray(full.works)) works = full.works;
+        }catch(e){
+          console.error('Failed to load full admin data', e);
+        }
+      }
+      WORKS = works;
+      WORKS_BY_KEY = Object.fromEntries(works.map(w => [w.key, w]));
       const visibleWorks = adminVerified ? works : works.filter(w => !w.hidden);
       grid.insertAdjacentHTML('beforeend', visibleWorks.map(w => cardHtml(w, adminVerified)).join(''));
       if(adminVerified){
