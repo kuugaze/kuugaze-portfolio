@@ -34,9 +34,8 @@
     "category": "【VJ】",
     "title": "ZEROFES 2026",
     "subtitle": "Real-Time Camera FX  @ZEROFES 2026",
-    "jp": "ZEROFES 2026にてオーディオビジュアルチームBRDGのメンバーとして参加\n会場内のリアルタイムカメラ映像に対し、ライブで映像エフェクトを適用し、音楽と連動したビジュアル演出を行いました。",
-    "en": "Participated in ZEROFES 2026 as a member of the VJ collective BRDG.\nProcessed real-time camera feeds with live visual effects, creating immersive visuals synchronized with the music and live performances.",
-    "meta": "■Artists\nELFIGO / DJ RICARDO / TIM BLISS\n\n■VJ (BRDG Members)\nblock m / Keijiro Takahashi / JACKSON kaki / Kuugaze",
+    "jp": "ZEROFES 2026にてオーディオビジュアルチームBRDGのメンバーとして参加\n会場内のリアルタイムカメラ映像に対し、ライブで映像エフェクトを適用し、音楽と連動したビジュアル演出を行いました。\n\n■Artists\nELFIGO / DJ RICARDO / TIM BLISS\n\n■VJ (BRDG Members)\nblock m / Keijiro Takahashi / JACKSON kaki / Kuugaze",
+    "en": "Participated in ZEROFES 2026 as a member of the VJ collective BRDG.\nProcessed real-time camera feeds with live visual effects, creating immersive visuals synchronized with the music and live performances.\n\n■Artists\nELFIGO / DJ RICARDO / TIM BLISS\n\n■VJ (BRDG Members)\nblock m / Keijiro Takahashi / JACKSON kaki / Kuugaze",
     "embed": {
       "type": "youtube",
       "id": "sn4ctgOB_QE"
@@ -44,7 +43,10 @@
     "embedThumb": "images/vidthumb_zerofes.jpg",
     "images": [
       "images/zerofes_1.jpg"
-    ]
+    ],
+    "subtitleEn": "Real-Time Camera FX  @ZEROFES 2026",
+    "subtitleJp": "Real-Time Camera FX  @ZEROFES 2026",
+    "galleryLayout": "single"
   },
   {
     "key": "alexandros",
