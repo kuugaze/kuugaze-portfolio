@@ -422,6 +422,27 @@
     font-size:11px;
     width:100%;
   }
+  .file-input-visually-hidden{
+    position:absolute;
+    width:1px;
+    height:1px;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }
+  .file-choose-btn{
+    display:inline-block;
+    font-size:11px;
+    padding:6px 10px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    cursor:pointer;
+    color:var(--ink);
+    background:var(--card-bg);
+  }
   #siteSettingsPanel input[type="text"],
   #siteSettingsPanel textarea{
     font-size:12px;
@@ -1650,6 +1671,19 @@
     }
   }
 
+  // Ctrl+Shift+R-equivalent: a real browser hard-reload can't be triggered
+  // from page script, so this gets as close as script can -- navigating to
+  // the same URL with a fresh cache-busting param, forcing the browser to
+  // treat the document as new rather than serving a cached copy. Used
+  // after a successful save so the page (and any open editor overlay,
+  // which a full reload naturally clears) always reflects what was just
+  // published.
+  function hardReload(){
+    const url = new URL(location.href);
+    url.searchParams.set('_r', Date.now());
+    location.href = url.toString();
+  }
+
   let weState = null;
   let ssState = null;
 
@@ -2052,7 +2086,8 @@
         newGalleryImages: imageOrder.filter(t => /^GAL\d+$/.test(t)),
         galleryLayout: overlay.querySelector('#weGalleryLayout').value
       };
-      await publishSiteUpdate(payload, files, status);
+      const workSaveSuccess = await publishSiteUpdate(payload, files, status);
+      if(workSaveSuccess) hardReload();
     });
 
     const deleteBtn = overlay.querySelector('#weDeleteBtn');
@@ -2085,6 +2120,7 @@
     let originalLoc = ABOUT.loc || '3DCG, VR, AudioVisual';
     let originalShowX = ABOUT.showX === true;
     let originalXUrl = ABOUT.xUrl || '';
+    let originalInstagramUrl = ABOUT.instagramUrl || '';
 
     const panel = document.createElement('div');
     panel.id = 'siteSettingsPanel';
@@ -2092,28 +2128,30 @@
       <div class="we-field">
         <label>プロフィール画像</label>
         <img class="we-thumb-preview" id="ssAvatarPreview" src="images/avatar.png" style="width:64px;height:64px;border-radius:50%;">
-        <input type="file" id="ssAvatarFile" accept="image/*">
+        <label class="file-choose-btn" for="ssAvatarFile">ファイルを選択</label>
+        <input type="file" id="ssAvatarFile" accept="image/*" class="file-input-visually-hidden">
       </div>
       <div class="we-field">
         <label>ヘッダー画像</label>
         <img class="we-thumb-preview" id="ssBannerPreview" src="images/banner.png" style="width:100%;height:60px;object-fit:cover;border-radius:4px;">
-        <input type="file" id="ssBannerFile" accept="image/*">
+        <label class="file-choose-btn" for="ssBannerFile">ファイルを選択</label>
+        <input type="file" id="ssBannerFile" accept="image/*" class="file-input-visually-hidden">
       </div>
       <div class="we-field">
         <label>名前</label>
         <input type="text" id="ssName" value="${escapeAttr(ABOUT.name || 'kuugaze')}">
       </div>
       <div class="we-field">
-        <label>肩書（複数行可）</label>
+        <label>肩書</label>
         <textarea id="ssRole" rows="2">${escapeHtml((ABOUT.role || 'Digital Artist based in Tokyo, Japan') + '\n' + (ABOUT.loc || '3DCG, VR, AudioVisual'))}</textarea>
       </div>
       <div class="we-field">
         <label>ヘッダーの高さ<span class="we-range-val" id="ssBannerHeightVal">${ABOUT.bannerHeight || 190}px</span></label>
-        <input type="range" id="ssBannerHeight" min="0" max="400" step="1" value="${ABOUT.bannerHeight || 190}">
+        <input type="range" id="ssBannerHeight" min="0" max="400" step="5" value="${ABOUT.bannerHeight || 190}">
       </div>
       <div class="we-field">
         <label>サイトの表示幅<span class="we-range-val" id="ssSiteWidthVal">${ABOUT.siteWidth || 1240}px</span></label>
-        <input type="range" id="ssSiteWidth" min="200" max="3000" step="10" value="${ABOUT.siteWidth || 1240}">
+        <input type="range" id="ssSiteWidth" min="200" max="3000" step="5" value="${ABOUT.siteWidth || 1240}">
       </div>
       <div class="we-field">
         <label>表示設定</label>
@@ -2121,6 +2159,10 @@
         <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowRole" ${ABOUT.showRole === false ? '' : 'checked'}> 肩書を表示</label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowInstagram" ${ABOUT.showInstagram === false ? '' : 'checked'}> Instagramリンクを表示</label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);"><input type="checkbox" id="ssShowX" ${ABOUT.showX === true ? 'checked' : ''}> X（Twitter）リンクを表示</label>
+      </div>
+      <div class="we-field">
+        <label>InstagramのURL</label>
+        <input type="text" id="ssInstagramUrl" placeholder="https://instagram.com/yourname" value="${escapeAttr(ABOUT.instagramUrl || '')}">
       </div>
       <div class="we-field">
         <label>X（Twitter）のURL</label>
@@ -2192,6 +2234,7 @@
     const showRoleInput = panel.querySelector('#ssShowRole');
     const showInstagramInput = panel.querySelector('#ssShowInstagram');
     const showXInput = panel.querySelector('#ssShowX');
+    const instagramUrlInput = panel.querySelector('#ssInstagramUrl');
     const xUrlInput = panel.querySelector('#ssXUrl');
     showNameInput.addEventListener('change', () => {
       const el = document.getElementById('profileName');
@@ -2203,10 +2246,17 @@
       if(roleEl) roleEl.style.display = showRoleInput.checked ? '' : 'none';
       if(locEl) locEl.style.display = showRoleInput.checked ? '' : 'none';
     });
-    showInstagramInput.addEventListener('change', () => {
-      const el = document.getElementById('profileSocials');
-      if(el) el.style.display = showInstagramInput.checked ? '' : 'none';
-    });
+    // NOTE: Instagram and X each toggle only their OWN <a> element's
+    // display -- they used to both be gated through the shared
+    // #profileSocials wrapper, which meant hiding Instagram also hid X.
+    function applyInstagramLinkPreview(){
+      const el = document.getElementById('profileInstagramLink');
+      if(!el) return;
+      if(instagramUrlInput.value.trim()) el.href = instagramUrlInput.value.trim();
+      el.style.display = showInstagramInput.checked ? '' : 'none';
+    }
+    showInstagramInput.addEventListener('change', applyInstagramLinkPreview);
+    instagramUrlInput.addEventListener('input', applyInstagramLinkPreview);
     function applyXLinkPreview(){
       const el = document.getElementById('profileXLink');
       if(!el) return;
@@ -2230,7 +2280,7 @@
       const profileNameEl = document.getElementById('profileName');
       const profileRoleEl = document.getElementById('profileRole');
       const profileLocEl = document.getElementById('profileLoc');
-      const profileSocialsEl = document.getElementById('profileSocials');
+      const profileInstagramLinkEl = document.getElementById('profileInstagramLink');
       const profileXLinkEl = document.getElementById('profileXLink');
       if(profileNameEl){
         profileNameEl.textContent = originalName;
@@ -2244,7 +2294,10 @@
         profileLocEl.textContent = originalLoc;
         profileLocEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
       }
-      if(profileSocialsEl) profileSocialsEl.style.display = (ABOUT.showInstagram === false) ? 'none' : '';
+      if(profileInstagramLinkEl){
+        profileInstagramLinkEl.href = originalInstagramUrl || 'https://instagram.com/kuugaze';
+        profileInstagramLinkEl.style.display = (ABOUT.showInstagram === false) ? 'none' : '';
+      }
       if(profileXLinkEl){
         if(originalShowX && originalXUrl){
           profileXLinkEl.href = originalXUrl;
@@ -2269,7 +2322,7 @@
         name: nameInput.value.trim(),
         role: (roleLines[0] || '').trim(),
         loc: roleLines.slice(1).join(' ').trim(),
-        instagramUrl: ABOUT.instagramUrl || 'https://instagram.com/kuugaze',
+        instagramUrl: instagramUrlInput.value.trim(),
         showName: showNameInput.checked,
         showRole: showRoleInput.checked,
         showInstagram: showInstagramInput.checked,
@@ -2296,15 +2349,7 @@
         ABOUT.xUrl = payload.xUrl;
         ABOUT.bannerHeight = payload.bannerHeight;
         ABOUT.siteWidth = payload.siteWidth;
-        originalBannerHeightPx = payload.bannerHeight + 'px';
-        originalSiteWidthPx = payload.siteWidth + 'px';
-        originalName = payload.name;
-        originalRole = payload.role;
-        originalLoc = payload.loc;
-        originalShowX = payload.showX;
-        originalXUrl = payload.xUrl;
-        ssState.pendingAvatarFile = null;
-        ssState.pendingBannerFile = null;
+        hardReload();
       }
     });
   }
@@ -2337,15 +2382,7 @@
       openWorkEditor(null);
     });
 
-    // Ctrl+Shift+R-equivalent: a real browser hard-reload can't be triggered
-    // from page script, so this gets as close as script can -- navigating to
-    // the same URL with a fresh cache-busting param, forcing the browser to
-    // treat the document as new rather than serving a cached copy.
-    panel.querySelector('#adminHardReloadBtn').addEventListener('click', () => {
-      const url = new URL(location.href);
-      url.searchParams.set('_r', Date.now());
-      location.href = url.toString();
-    });
+    panel.querySelector('#adminHardReloadBtn').addEventListener('click', hardReload);
   }
 
   function enableAboutEditButton(){
@@ -2373,7 +2410,6 @@
       const profileNameEl = document.getElementById('profileName');
       const profileRoleEl = document.getElementById('profileRole');
       const profileLocEl = document.getElementById('profileLoc');
-      const profileSocialsEl = document.getElementById('profileSocials');
       const profileInstagramLinkEl = document.getElementById('profileInstagramLink');
       const profileXLinkEl = document.getElementById('profileXLink');
       if(profileNameEl){
@@ -2388,8 +2424,10 @@
         profileLocEl.textContent = ABOUT.loc || '3DCG, VR, AudioVisual';
         profileLocEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
       }
-      if(profileSocialsEl) profileSocialsEl.style.display = (ABOUT.showInstagram === false) ? 'none' : '';
-      if(profileInstagramLinkEl) profileInstagramLinkEl.href = ABOUT.instagramUrl || 'https://instagram.com/kuugaze';
+      if(profileInstagramLinkEl){
+        profileInstagramLinkEl.href = ABOUT.instagramUrl || 'https://instagram.com/kuugaze';
+        profileInstagramLinkEl.style.display = (ABOUT.showInstagram === false) ? 'none' : '';
+      }
       if(profileXLinkEl){
         if(ABOUT.showX === true && ABOUT.xUrl){
           profileXLinkEl.href = ABOUT.xUrl;
