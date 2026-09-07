@@ -883,7 +883,7 @@
     if(subtitleEn) html += `<div class="proj-subtitle">${escapeHtml(subtitleEn)}</div>`;
     if(d.en) html += `<div class="proj-text">${renderBody(d.en)}</div>`;
     if(d.jp && d.en) html += `<hr class="proj-divider">`;
-    if(subtitleJp && subtitleJp !== subtitleEn) html += `<div class="proj-subtitle">${escapeHtml(subtitleJp)}</div>`;
+    if(subtitleJp) html += `<div class="proj-subtitle">${escapeHtml(subtitleJp)}</div>`;
     if(d.jp) html += `<div class="proj-text">${renderBody(d.jp)}</div>`;
     if(d.heading2) html += `<div class="proj-heading2">${escapeHtml(d.heading2)}</div>`;
     if(d.meta) html += `<div class="proj-meta">${renderBody(d.meta)}</div>`;
