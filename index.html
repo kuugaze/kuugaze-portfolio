@@ -493,6 +493,66 @@
     vertical-align:middle;
   }
 
+  #adminGateOverlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,.75);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:500;
+  }
+  .admin-gate-box{
+    background:var(--card-bg);
+    color:var(--ink);
+    max-width:360px;
+    width:100%;
+    border-radius:8px;
+    padding:28px 24px;
+    box-shadow:0 24px 70px rgba(0,0,0,.45);
+    text-align:center;
+  }
+  .admin-gate-title{
+    font-size:16px;
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .admin-gate-desc{
+    font-size:12px;
+    color:var(--sub);
+    margin-bottom:16px;
+  }
+  .admin-gate-box input[type="password"]{
+    width:100%;
+    font-size:14px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:inherit;
+    margin-bottom:10px;
+    box-sizing:border-box;
+  }
+  .admin-gate-error{
+    font-size:12px;
+    color:#c0392b;
+    min-height:16px;
+    margin-bottom:10px;
+  }
+  .admin-gate-box button{
+    width:100%;
+    font-size:13px;
+    font-weight:700;
+    padding:10px 12px;
+    border:none;
+    border-radius:5px;
+    background:var(--accent);
+    color:#fff;
+    cursor:pointer;
+  }
+  .admin-gate-box button:disabled{
+    opacity:.6;
+    cursor:default;
+  }
   #workEditorOverlay{
     position:fixed; inset:0;
     background:rgba(0,0,0,.6);
@@ -1337,6 +1397,84 @@
   const WORKER_URL = 'https://kuugaze-site-update.kuugaze.workers.dev';
   const ADMIN_SECRET_KEY = 'kuugazeAdminSecret';
 
+  // --- Admin-mode gate: ?kuugazeadmin=1 alone must never reveal hidden
+  // works or the editing UI. Before anything admin-only renders, the
+  // entered secret is checked against the Worker itself (the only place
+  // that actually knows ADMIN_SECRET). The check uses an unrecognized
+  // payload type, so it never reaches — and can never trigger — any of
+  // the Worker's GitHub read/write branches: a wrong secret gets 401,
+  // a right one gets past the auth check and only then hits "unknown
+  // type", which is how a correct key is told apart from an incorrect
+  // one without writing anything. ---
+  async function checkSecretAgainstWorker(secret){
+    try{
+      const form = new FormData();
+      form.append('payload', JSON.stringify({ type: '__verify__' }));
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${secret}` },
+        body: form
+      });
+      return res.status !== 401;
+    }catch(e){
+      return false;
+    }
+  }
+
+  function showAdminGate(){
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.id = 'adminGateOverlay';
+      overlay.innerHTML = `
+        <div class="admin-gate-box">
+          <div class="admin-gate-title">管理者ログイン</div>
+          <div class="admin-gate-desc">シークレットキーを入力してください</div>
+          <input type="password" id="adminGateInput" placeholder="シークレットキー" autocomplete="off">
+          <div class="admin-gate-error" id="adminGateError"></div>
+          <button type="button" id="adminGateSubmit">ログイン</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      const input = overlay.querySelector('#adminGateInput');
+      const errorEl = overlay.querySelector('#adminGateError');
+      const submitBtn = overlay.querySelector('#adminGateSubmit');
+      input.focus();
+
+      let busy = false;
+      async function attempt(){
+        if(busy) return;
+        const val = input.value;
+        if(!val) return;
+        busy = true;
+        submitBtn.disabled = true;
+        errorEl.textContent = '確認中…';
+        const ok = await checkSecretAgainstWorker(val);
+        busy = false;
+        submitBtn.disabled = false;
+        if(ok){
+          localStorage.setItem(ADMIN_SECRET_KEY, val);
+          overlay.remove();
+          resolve(true);
+        }else{
+          errorEl.textContent = 'シークレットキーが正しくないか、確認できませんでした。';
+          input.select();
+        }
+      }
+      submitBtn.addEventListener('click', attempt);
+      input.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); attempt(); } });
+    });
+  }
+
+  async function verifyAdminAccess(){
+    const cached = localStorage.getItem(ADMIN_SECRET_KEY);
+    if(cached){
+      const ok = await checkSecretAgainstWorker(cached);
+      if(ok) return true;
+      localStorage.removeItem(ADMIN_SECRET_KEY);
+    }
+    return await showAdminGate();
+  }
+
    function askAdminSecretInline(container){
     return new Promise((resolve) => {
       const box = document.createElement('div');
@@ -2076,7 +2214,7 @@
     fetch('works.json?_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()),
     fetch('about.json?_=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
   ])
-    .then(([works, about]) => {
+    .then(async ([works, about]) => {
       WORKS = works;
       WORKS_BY_KEY = Object.fromEntries(works.map(w => [w.key, w]));
       if(about) ABOUT = about;
@@ -2110,9 +2248,10 @@
       }
       document.documentElement.style.setProperty('--banner-height', (ABOUT.bannerHeight || 190) + 'px');
       document.documentElement.style.setProperty('--site-width', (ABOUT.siteWidth || 1240) + 'px');
-      const visibleWorks = isAdmin ? works : works.filter(w => !w.hidden);
-      grid.insertAdjacentHTML('beforeend', visibleWorks.map(w => cardHtml(w, isAdmin)).join(''));
-      if(isAdmin){
+      const adminVerified = isAdmin ? await verifyAdminAccess() : false;
+      const visibleWorks = adminVerified ? works : works.filter(w => !w.hidden);
+      grid.insertAdjacentHTML('beforeend', visibleWorks.map(w => cardHtml(w, adminVerified)).join(''));
+      if(adminVerified){
         enableDragReorder();
         enableHideToggle();
         enableEditButtons();
