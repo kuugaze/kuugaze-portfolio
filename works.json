@@ -5,11 +5,9 @@
     "category": "【Audiovisual Showcase】",
     "title": "Channel #24",
     "subtitle": "",
-    "jp": "東京を拠点とするオーディオビジュアルチームBRDG主催のオーディオビジュアルイベント「Channel #24」にて\numio × Kuugaze のオーディオビジュアルショーケースを披露しました。",
-    "en": "We performed an audiovisual showcase of umio × Kuugaze at the audiovisual event \"Channel #24\" organized by the Tokyo-based audiovisual team BRDG.",
+    "jp": "東京を拠点とするオーディオビジュアルチームBRDG主催のオーディオビジュアルイベント「Channel #24」にて\numio × Kuugaze のオーディオビジュアルショーケースを披露しました。\n\n■visual archives\n\nTitle : vxperience\nMusic : Created with AI\nMovie : Kuugaze\n\nThe video below was produced using the system used on-site and has been edited for archival purposes.\n下記映像は、現場で使用したシステムを活用して制作したものであり、アーカイブ目的で編集したものです。",
+    "en": "We performed an audiovisual showcase of umio × Kuugaze at the audiovisual event \"Channel #24\" organized by the Tokyo-based audiovisual team BRDG.\n\n■visual archives\n\nTitle : vxperience\nMusic : Created with AI\nMovie : Kuugaze\n\nThe video below was produced using the system used on-site and has been edited for archival purposes.\n下記映像は、現場で使用したシステムを活用して制作したものであり、アーカイブ目的で編集したものです。",
     "heading2": "visual archives",
-    "meta": "Title : vxperience\nMusic : Created with AI\nMovie : Kuugaze",
-    "note": "The video below was produced using the system used on-site and has been edited for archival purposes.\n下記映像は、現場で使用したシステムを活用して制作したものであり、アーカイブ目的で編集したものです。",
     "embed": {
       "type": "vimeo",
       "id": "1029941160",
@@ -25,7 +23,10 @@
       "images/showcase_6.jpg",
       "images/showcase_7.jpg",
       "images/showcase_8.jpg"
-    ]
+    ],
+    "subtitleEn": "Audiovisual Showcase @Channel #24",
+    "subtitleJp": "オーディオビジュアルショーケース\n@ チャネル #24",
+    "galleryLayout": "grid"
   },
   {
     "key": "zerofes",
