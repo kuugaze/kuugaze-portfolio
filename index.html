@@ -184,6 +184,8 @@
     .profile{ position:static; }
     .avatar{ margin-top:-40px; }
     .grid{ grid-template-columns:repeat(2,1fr); }
+    .socials{ flex-direction:row; flex-wrap:wrap; gap:20px; }
+    .socials a{ padding:6px 0; }
   }
   @media (max-width:420px){
     .grid{ grid-template-columns:repeat(2,1fr); gap:14px 10px; }
@@ -1721,7 +1723,6 @@
         </div>`;
     const subtitleEnValue = isAbout ? escapeHtml(ABOUT.subtitleEn || ABOUT.subtitle || '') : '';
     const subtitleJpValue = isAbout ? escapeHtml(ABOUT.subtitleJp || ABOUT.subtitle || '') : '';
-    const aboutMetaValue = isAbout ? escapeHtml(ABOUT.meta || '') : '';
     const aboutFieldsHtml = isAbout ? `
         <div class="we-field"><label>サブタイトル（英語）</label><textarea id="weSubtitleEn" rows="3">${subtitleEnValue}</textarea></div>
         <div class="we-field">
@@ -1734,8 +1735,7 @@
           <label>本文（日本語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-jp-toolbar')}
           <div class="rte-editor" id="weAboutJp"></div>
-        </div>
-        <div class="we-field"><label>メタ情報（任意）</label><textarea id="weAboutMeta" rows="3">${aboutMetaValue}</textarea></div>` : '';
+        </div>` : '';
 
     const overlay = document.createElement('div');
     overlay.id = 'workEditorOverlay';
@@ -1774,8 +1774,7 @@
           subtitleEn: (overlay.querySelector('#weSubtitleEn')?.value || '').trim(),
           subtitleJp: (overlay.querySelector('#weSubtitleJp')?.value || '').trim(),
           en: weAboutEnEl ? serializeEditorContent(weAboutEnEl) : '',
-          jp: weAboutJpEl ? serializeEditorContent(weAboutJpEl) : '',
-          meta: overlay.querySelector('#weAboutMeta')?.value || ''
+          jp: weAboutJpEl ? serializeEditorContent(weAboutJpEl) : ''
         };
       }
       const title = (overlay.querySelector('#weTitle')?.value || '').trim();
@@ -1850,7 +1849,6 @@
       setupRichEditor(overlay.querySelector('.we-about-jp-toolbar'), weAboutJpEl, updatePreview);
       overlay.querySelector('#weSubtitleEn')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weSubtitleJp')?.addEventListener('input', updatePreview);
-      overlay.querySelector('#weAboutMeta')?.addEventListener('input', updatePreview);
     }
 
     // Finds the gallery item a dragged thumbnail should be inserted before,
@@ -1962,7 +1960,6 @@
           subtitleJp: overlay.querySelector('#weSubtitleJp').value.trim(),
           en: serializeEditorContent(overlay.querySelector('#weAboutEn')).trim(),
           jp: serializeEditorContent(overlay.querySelector('#weAboutJp')).trim(),
-          meta: overlay.querySelector('#weAboutMeta').value.trim(),
           name: ABOUT.name || 'kuugaze',
           role: ABOUT.role || 'Digital Artist based in Tokyo, Japan',
           loc: ABOUT.loc || '3DCG, VR, AudioVisual',
@@ -1983,7 +1980,6 @@
           ABOUT.subtitleJp = payload.subtitleJp;
           ABOUT.en = payload.en;
           ABOUT.jp = payload.jp;
-          ABOUT.meta = payload.meta;
         }
         return;
       }
@@ -2247,7 +2243,6 @@
         subtitleJp: ABOUT.subtitleJp || ABOUT.subtitle || '',
         en: ABOUT.en || '',
         jp: ABOUT.jp || '',
-        meta: ABOUT.meta || '',
         name: nameInput.value.trim(),
         role: (roleLines[0] || '').trim(),
         loc: roleLines.slice(1).join(' ').trim(),
@@ -2301,6 +2296,7 @@
       <div id="adminStatus"></div>
       <hr class="admin-divider">
       <button id="adminAddNewBtn">＋ 新しい作品を追加</button>
+      <button id="adminHardReloadBtn" title="Ctrl+Shift+R相当：キャッシュを無視して再読み込み">🔄 強制再読み込み</button>
     `;
     document.body.appendChild(panel);
 
@@ -2316,6 +2312,16 @@
 
     panel.querySelector('#adminAddNewBtn').addEventListener('click', () => {
       openWorkEditor(null);
+    });
+
+    // Ctrl+Shift+R-equivalent: a real browser hard-reload can't be triggered
+    // from page script, so this gets as close as script can -- navigating to
+    // the same URL with a fresh cache-busting param, forcing the browser to
+    // treat the document as new rather than serving a cached copy.
+    panel.querySelector('#adminHardReloadBtn').addEventListener('click', () => {
+      const url = new URL(location.href);
+      url.searchParams.set('_r', Date.now());
+      location.href = url.toString();
     });
   }
 
