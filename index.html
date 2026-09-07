@@ -236,9 +236,10 @@
     line-height:1.4;
     margin:0 0 18px;
     padding-right:40px;
-    white-space:nowrap;
+    display:-webkit-box;
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
     overflow:hidden;
-    text-overflow:ellipsis;
   }
   .proj-heading2{
     font-style:italic;
@@ -308,7 +309,7 @@
     .modal-overlay{ padding:48px 32px; }
     .modal{ padding:20px 20px 36px; }
     .modal-close-btn{ position:fixed; top:14px; right:14px; z-index:60; }
-    .proj-subtitle{ font-size:19px; padding-right:44px; white-space:normal; overflow:visible; text-overflow:clip; }
+    .proj-subtitle{ font-size:19px; padding-right:44px; }
     .proj-gallery{ grid-template-columns:1fr; }
   }
 
@@ -875,9 +876,13 @@
     return `<div class="${cls}">${images.map(src=>`<img src="${src}" alt="" loading="lazy">`).join('')}</div>`;
   }
   function renderProject(d){
-    let html = `<div class="proj-subtitle">${escapeHtml(d.subtitle || '')}</div>`;
+    const subtitleEn = d.subtitleEn || d.subtitle || '';
+    const subtitleJp = d.subtitleJp || d.subtitle || '';
+    let html = '';
+    if(subtitleEn) html += `<div class="proj-subtitle">${escapeHtml(subtitleEn)}</div>`;
     if(d.en) html += `<div class="proj-text">${renderBody(d.en)}</div>`;
     if(d.jp && d.en) html += `<hr class="proj-divider">`;
+    if(subtitleJp && subtitleJp !== subtitleEn) html += `<div class="proj-subtitle">${escapeHtml(subtitleJp)}</div>`;
     if(d.jp) html += `<div class="proj-text">${renderBody(d.jp)}</div>`;
     if(d.heading2) html += `<div class="proj-heading2">${escapeHtml(d.heading2)}</div>`;
     if(d.meta) html += `<div class="proj-meta">${renderBody(d.meta)}</div>`;
@@ -892,20 +897,29 @@
   const grid = document.getElementById('grid');
 
   let modalLockScrollY = 0;
+  function preventTouchMoveOutsideOverlay(e){
+    if(!overlay.contains(e.target)) e.preventDefault();
+  }
   function lockBodyScroll(){
     modalLockScrollY = window.scrollY || window.pageYOffset || 0;
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
     document.body.style.top = (-modalLockScrollY) + 'px';
     document.body.style.left = '0';
     document.body.style.right = '0';
     document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('touchmove', preventTouchMoveOutsideOverlay, { passive: false });
   }
   function unlockBodyScroll(){
+    document.removeEventListener('touchmove', preventTouchMoveOutsideOverlay, { passive: false });
+    document.documentElement.style.overflow = '';
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.left = '';
     document.body.style.right = '';
     document.body.style.width = '';
+    document.body.style.overflow = '';
     window.scrollTo(0, modalLockScrollY);
   }
   function closeModal(){
@@ -1467,8 +1481,7 @@
     const workDefaultSubtitle = (!isAbout && !isNew) ? (workCatClean ? `${workCatClean} @${work.title || ''}` : (work.title || '')) : '';
     const categoryTitleHtml = isAbout ? '' : `
         <div class="we-field"><label>カテゴリ</label><input type="text" id="weCategory" value="${isNew ? '' : escapeAttr(work.category || '')}"></div>
-        <div class="we-field"><label>タイトル（必須）</label><input type="text" id="weTitle" value="${isNew ? '' : escapeAttr(work.title || '')}"></div>
-        <div class="we-field"><label>サブタイトル</label><input type="text" id="weSubtitle" value="${isNew ? '' : escapeAttr(work.subtitle || workDefaultSubtitle)}"></div>`;
+        <div class="we-field"><label>タイトル（必須）</label><input type="text" id="weTitle" value="${isNew ? '' : escapeAttr(work.title || '')}"></div>`;
     const richToolbarHtml = `
         <div class="rte-toolbar">
           <select class="rte-font">
@@ -1503,11 +1516,13 @@
           <button type="button" class="rte-btn" data-cmd="link">🔗リンク</button>
         </div>`;
     const enJpEmbedGalleryHtml = isAbout ? '' : `
+        <div class="we-field"><label>サブタイトル（英語）</label><input type="text" id="weSubtitleEn" value="${isNew ? '' : escapeAttr(work.subtitleEn || work.subtitle || workDefaultSubtitle)}"></div>
         <div class="we-field">
           <label>本文（英語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-en-toolbar')}
           <div class="rte-editor" id="weEn"></div>
         </div>
+        <div class="we-field"><label>サブタイトル（日本語）</label><input type="text" id="weSubtitleJp" value="${isNew ? '' : escapeAttr(work.subtitleJp || work.subtitle || workDefaultSubtitle)}"></div>
         <div class="we-field">
           <label>本文（日本語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-jp-toolbar')}
@@ -1526,15 +1541,17 @@
             <option value="single" ${(!isNew && work && work.galleryLayout === 'single') ? 'selected' : ''}>1列（横幅いっぱい）</option>
           </select>
         </div>`;
-    const subtitleValue = isAbout ? escapeAttr(ABOUT.subtitle || '') : '';
+    const subtitleEnValue = isAbout ? escapeAttr(ABOUT.subtitleEn || ABOUT.subtitle || '') : '';
+    const subtitleJpValue = isAbout ? escapeAttr(ABOUT.subtitleJp || ABOUT.subtitle || '') : '';
     const aboutMetaValue = isAbout ? escapeHtml(ABOUT.meta || '') : '';
     const aboutFieldsHtml = isAbout ? `
-        <div class="we-field"><label>サブタイトル</label><input type="text" id="weSubtitle" value="${subtitleValue}"></div>
+        <div class="we-field"><label>サブタイトル（英語）</label><input type="text" id="weSubtitleEn" value="${subtitleEnValue}"></div>
         <div class="we-field">
           <label>本文（英語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-en-toolbar')}
           <div class="rte-editor" id="weAboutEn"></div>
         </div>
+        <div class="we-field"><label>サブタイトル（日本語）</label><input type="text" id="weSubtitleJp" value="${subtitleJpValue}"></div>
         <div class="we-field">
           <label>本文（日本語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-jp-toolbar')}
@@ -1576,7 +1593,8 @@
         const weAboutEnEl = overlay.querySelector('#weAboutEn');
         const weAboutJpEl = overlay.querySelector('#weAboutJp');
         return {
-          subtitle: (overlay.querySelector('#weSubtitle')?.value || '').trim(),
+          subtitleEn: (overlay.querySelector('#weSubtitleEn')?.value || '').trim(),
+          subtitleJp: (overlay.querySelector('#weSubtitleJp')?.value || '').trim(),
           en: weAboutEnEl ? serializeEditorContent(weAboutEnEl) : '',
           jp: weAboutJpEl ? serializeEditorContent(weAboutJpEl) : '',
           meta: overlay.querySelector('#weAboutMeta')?.value || ''
@@ -1585,8 +1603,11 @@
       const title = (overlay.querySelector('#weTitle')?.value || '').trim();
       const category = (overlay.querySelector('#weCategory')?.value || '').trim();
       const catClean = category.replace(/[【】\[\]]/g, '').trim();
-      const subtitleField = (overlay.querySelector('#weSubtitle')?.value || '').trim();
-      const subtitle = subtitleField || (catClean ? `${catClean} @${title}` : title);
+      const defaultSubtitle = catClean ? `${catClean} @${title}` : title;
+      const subtitleEnField = (overlay.querySelector('#weSubtitleEn')?.value || '').trim();
+      const subtitleJpField = (overlay.querySelector('#weSubtitleJp')?.value || '').trim();
+      const subtitleEn = subtitleEnField || defaultSubtitle;
+      const subtitleJp = subtitleJpField || defaultSubtitle;
       const weEnEl = overlay.querySelector('#weEn');
       const weJpEl = overlay.querySelector('#weJp');
       const embed = parseEmbedUrl(overlay.querySelector('#weEmbed')?.value || '');
@@ -1594,7 +1615,8 @@
         weState.pendingGalleryFiles.map(f => URL.createObjectURL(f))
       );
       return {
-        subtitle,
+        subtitleEn,
+        subtitleJp,
         en: weEnEl ? serializeEditorContent(weEnEl) : '',
         jp: weJpEl ? serializeEditorContent(weJpEl) : '',
         meta: (!isNew && work) ? (work.meta || '') : '',
@@ -1619,7 +1641,8 @@
       setupRichEditor(overlay.querySelector('.we-jp-toolbar'), weJpEl, updatePreview);
       overlay.querySelector('#weCategory')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weTitle')?.addEventListener('input', updatePreview);
-      overlay.querySelector('#weSubtitle')?.addEventListener('input', updatePreview);
+      overlay.querySelector('#weSubtitleEn')?.addEventListener('input', updatePreview);
+      overlay.querySelector('#weSubtitleJp')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weEmbed')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weGalleryLayout')?.addEventListener('change', updatePreview);
     }else{
@@ -1629,7 +1652,8 @@
       loadIntoEditor(weAboutJpEl, ABOUT.jp || '');
       setupRichEditor(overlay.querySelector('.we-about-en-toolbar'), weAboutEnEl, updatePreview);
       setupRichEditor(overlay.querySelector('.we-about-jp-toolbar'), weAboutJpEl, updatePreview);
-      overlay.querySelector('#weSubtitle')?.addEventListener('input', updatePreview);
+      overlay.querySelector('#weSubtitleEn')?.addEventListener('input', updatePreview);
+      overlay.querySelector('#weSubtitleJp')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weAboutMeta')?.addEventListener('input', updatePreview);
     }
 
@@ -1689,7 +1713,8 @@
       if(isAbout){
         const payload = {
           type: 'about',
-          subtitle: overlay.querySelector('#weSubtitle').value.trim(),
+          subtitleEn: overlay.querySelector('#weSubtitleEn').value.trim(),
+          subtitleJp: overlay.querySelector('#weSubtitleJp').value.trim(),
           en: serializeEditorContent(overlay.querySelector('#weAboutEn')).trim(),
           jp: serializeEditorContent(overlay.querySelector('#weAboutJp')).trim(),
           meta: overlay.querySelector('#weAboutMeta').value.trim(),
@@ -1709,7 +1734,8 @@
         };
         const success = await publishSiteUpdate(payload, {}, status);
         if(success){
-          ABOUT.subtitle = payload.subtitle;
+          ABOUT.subtitleEn = payload.subtitleEn;
+          ABOUT.subtitleJp = payload.subtitleJp;
           ABOUT.en = payload.en;
           ABOUT.jp = payload.jp;
           ABOUT.meta = payload.meta;
@@ -1727,15 +1753,17 @@
         files[`GAL${i + 1}`] = f;
       });
       const catClean = category.replace(/[【】\[\]]/g, '').trim();
-      const subtitleField = overlay.querySelector('#weSubtitle').value.trim();
-      const finalSubtitle = subtitleField || (catClean ? `${catClean} @${title}` : title);
+      const defaultSubtitle = catClean ? `${catClean} @${title}` : title;
+      const finalSubtitleEn = overlay.querySelector('#weSubtitleEn').value.trim() || defaultSubtitle;
+      const finalSubtitleJp = overlay.querySelector('#weSubtitleJp').value.trim() || defaultSubtitle;
       const payload = {
         type: 'work',
         key: weState.key,
         original: (!isNew && work) ? work : null,
         category,
         title,
-        subtitle: finalSubtitle,
+        subtitleEn: finalSubtitleEn,
+        subtitleJp: finalSubtitleJp,
         jp: serializeEditorContent(overlay.querySelector('#weJp')).trim(),
         en: serializeEditorContent(overlay.querySelector('#weEn')).trim(),
         meta: (!isNew && work) ? (work.meta || '') : '',
@@ -1958,7 +1986,8 @@
       const roleLines = roleInput.value.split('\n');
       const payload = {
         type: 'about',
-        subtitle: ABOUT.subtitle || '',
+        subtitleEn: ABOUT.subtitleEn || ABOUT.subtitle || '',
+        subtitleJp: ABOUT.subtitleJp || ABOUT.subtitle || '',
         en: ABOUT.en || '',
         jp: ABOUT.jp || '',
         meta: ABOUT.meta || '',
