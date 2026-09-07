@@ -213,11 +213,14 @@
   },
   {
     "key": "sxsw2026",
-    "thumb": "images/sxsw2026.jpg",
+    "thumb": "images/sxsw2026.png",
     "category": "【Interactive Experience】",
     "title": "SXSW 2026 - NTT DOCOMO \"FEEL TECH\" × hololive",
     "subtitle": "SXSW 2026 - NTT DOCOMO \"FEEL TECH\" × hololive  Immersive Live Experience",
     "jp": "2026年3月12日〜14日にテキサスのオースティンで開催された「SXSW 2026」にて、NTTドコモの触覚共有技術「FEEL TECH」を活用したリアルタイム体験型コンテンツの映像制作を担当しました。\nVTuberグループ「ホロライブ」のライブパフォーマンスに合わせ、演者の鼓動や動作、音響振動をリスナー側の「FEEL TECH」デバイス（スピーカーと振動デバイスが一体化した触覚伝達システム）へリアルタイムに同期させる体験型コンテンツです。\n視覚・聴覚に「触覚」のフィードバックを融合させることで、VTuberの実在感を拡張します。\n\nhttps://www.moguravr.com/ntt-docomo-feel-tech-hololive-sxsw2026/",
-    "en": "At SXSW 2026, held in Austin, Texas from March 12 to 14, I was in charge of visual production for an interactive experience showcase powered by NTT DOCOMO's haptic sharing technology, \"FEEL TECH.\"\nIn sync with a live performance by the VTuber group hololive, the system transmitted the performer's heartbeat, movements, and audio vibrations in real-time to the audience's \"FEEL TECH\" hardware (an integrated system combining speakers and haptic feedback devices). By integrating touch with sight and sound, this project aims to expand the physical presence of virtual performers.\n\nhttps://www.docomo.ne.jp/english/info/media_center/pr/2026/0305_00.html"
+    "en": "At SXSW 2026, held in Austin, Texas from March 12 to 14, I was in charge of visual production for an interactive experience showcase powered by NTT DOCOMO's haptic sharing technology, \"FEEL TECH.\"\nIn sync with a live performance by the VTuber group hololive, the system transmitted the performer's heartbeat, movements, and audio vibrations in real-time to the audience's \"FEEL TECH\" hardware (an integrated system combining speakers and haptic feedback devices). By integrating touch with sight and sound, this project aims to expand the physical presence of virtual performers.\n\nhttps://www.docomo.ne.jp/english/info/media_center/pr/2026/0305_00.html",
+    "subtitleEn": "SXSW 2026 - NTT DOCOMO \"FEEL TECH\" × hololive  Immersive Live Experience",
+    "subtitleJp": "SXSW 2026 - NTT DOCOMO \"FEEL TECH\" × hololive  Immersive Live Experience",
+    "galleryLayout": "grid"
   }
 ]
