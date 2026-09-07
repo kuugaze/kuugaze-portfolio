@@ -1503,6 +1503,9 @@
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-jp-toolbar')}
           <div class="rte-editor" id="weJp"></div>
         </div>
+        <div class="we-field"><label>サブ見出し（任意）</label><input type="text" id="weHeading2" value="${isNew ? '' : escapeAttr(work.heading2 || '')}"></div>
+        <div class="we-field"><label>メタ情報（任意）</label><textarea id="weMeta" rows="3">${isNew ? '' : escapeHtml(work.meta || '')}</textarea></div>
+        <div class="we-field"><label>補足テキスト（任意）</label><textarea id="weNote" rows="3">${isNew ? '' : escapeHtml(work.note || '')}</textarea></div>
         <div class="we-field"><label>動画URL（YouTube / Vimeo・任意）</label><input type="text" id="weEmbed" value="${isNew ? '' : escapeAttr(embedToUrl(work.embed))}" placeholder="https://youtu.be/..."></div>
         <div class="we-field">
           <label>ギャラリー画像</label>
@@ -1594,8 +1597,9 @@
         subtitleJp,
         en: weEnEl ? serializeEditorContent(weEnEl) : '',
         jp: weJpEl ? serializeEditorContent(weJpEl) : '',
-        meta: (!isNew && work) ? (work.meta || '') : '',
-        note: (!isNew && work) ? (work.note || '') : '',
+        heading2: (overlay.querySelector('#weHeading2')?.value || '').trim(),
+        meta: overlay.querySelector('#weMeta')?.value || '',
+        note: overlay.querySelector('#weNote')?.value || '',
         embed,
         images,
         galleryLayout: overlay.querySelector('#weGalleryLayout')?.value || 'grid'
@@ -1620,6 +1624,9 @@
       overlay.querySelector('#weSubtitleJp')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weEmbed')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weGalleryLayout')?.addEventListener('change', updatePreview);
+      overlay.querySelector('#weHeading2')?.addEventListener('input', updatePreview);
+      overlay.querySelector('#weMeta')?.addEventListener('input', updatePreview);
+      overlay.querySelector('#weNote')?.addEventListener('input', updatePreview);
     }else{
       const weAboutEnEl = overlay.querySelector('#weAboutEn');
       const weAboutJpEl = overlay.querySelector('#weAboutJp');
@@ -1741,8 +1748,9 @@
         subtitleJp: finalSubtitleJp,
         jp: serializeEditorContent(overlay.querySelector('#weJp')).trim(),
         en: serializeEditorContent(overlay.querySelector('#weEn')).trim(),
-        meta: (!isNew && work) ? (work.meta || '') : '',
-        note: (!isNew && work) ? (work.note || '') : '',
+        heading2: overlay.querySelector('#weHeading2').value.trim(),
+        meta: overlay.querySelector('#weMeta').value.trim(),
+        note: overlay.querySelector('#weNote').value.trim(),
         embed,
         existingImages: weState.remainingImages,
         currentThumb: (!isNew && work) ? work.thumb : null,
