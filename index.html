@@ -644,6 +644,10 @@
   .we-gallery-item{
     position:relative;
     width:64px; height:64px;
+    cursor:grab;
+  }
+  .we-gallery-item.dragging{
+    opacity:0.4;
   }
   .we-gallery-item img{
     width:100%; height:100%;
@@ -1631,13 +1635,18 @@
     if(existing) existing.remove();
 
     const isNew = !isAbout && !work;
+    // galleryOrder is the single source of truth for both which gallery
+    // images exist AND what order they're in -- {kind:'existing', ref:path}
+    // for images already on the server, {kind:'pending', ref:File} for ones
+    // picked in this editing session but not yet uploaded. Keeping order and
+    // membership in one array (instead of two separate lists) is what makes
+    // drag-to-reorder work uniformly across both existing and new images.
     weState = {
       key: isAbout ? null : (isNew ? null : work.key),
       pendingThumbFile: null,
       pendingAvatarFile: null,
       pendingBannerFile: null,
-      remainingImages: (!isAbout && !isNew && work.images) ? [...work.images] : [],
-      pendingGalleryFiles: []
+      galleryOrder: (!isAbout && !isNew && work.images) ? work.images.map(p => ({ kind: 'existing', ref: p })) : []
     };
 
     const thumbFieldHtml = isAbout ? '' : `
@@ -1780,9 +1789,7 @@
       const weEnEl = overlay.querySelector('#weEn');
       const weJpEl = overlay.querySelector('#weJp');
       const embed = parseEmbedUrl(overlay.querySelector('#weEmbed')?.value || '');
-      const images = weState.remainingImages.concat(
-        weState.pendingGalleryFiles.map(f => URL.createObjectURL(f))
-      );
+      const images = weState.galleryOrder.map(it => it.kind === 'existing' ? resolveImgSrc(it.ref) : URL.createObjectURL(it.ref));
       return {
         subtitleEn,
         subtitleJp,
@@ -1846,28 +1853,77 @@
       overlay.querySelector('#weAboutMeta')?.addEventListener('input', updatePreview);
     }
 
+    // Finds the gallery item a dragged thumbnail should be inserted before,
+    // by nearest-center distance -- the same technique used for reordering
+    // work cards on the main grid, kept as its own small copy here since
+    // that one is hardcoded to the `.card` selector.
+    function getGalleryDragAfterElement(container, x, y, dragEl){
+      const els = [...container.querySelectorAll('.we-gallery-item')].filter(el => el !== dragEl);
+      let closest = { el: null, dist: Infinity };
+      els.forEach(el => {
+        const box = el.getBoundingClientRect();
+        const cx = box.left + box.width / 2;
+        const cy = box.top + box.height / 2;
+        const dist = Math.hypot(x - cx, y - cy);
+        if(dist < closest.dist) closest = { el, dist, cx };
+      });
+      if(!closest.el) return null;
+      return (x > closest.cx) ? closest.el.nextElementSibling : closest.el;
+    }
+    let galleryDragIdx = null;
     function renderGalleryList(){
       const list = overlay.querySelector('#weGalleryList');
       if(!list) return;
       let html = '';
-      weState.remainingImages.forEach((url, i) => {
-        html += `<div class="we-gallery-item"><img src="${escapeAttr(resolveImgSrc(url))}" alt=""><button type="button" data-kind="existing" data-idx="${i}">×</button></div>`;
-      });
-      weState.pendingGalleryFiles.forEach((f, i) => {
-        html += `<div class="we-gallery-item"><img src="${URL.createObjectURL(f)}" alt=""><button type="button" data-kind="pending" data-idx="${i}">×</button></div>`;
+      weState.galleryOrder.forEach((it, i) => {
+        const src = it.kind === 'existing' ? resolveImgSrc(it.ref) : URL.createObjectURL(it.ref);
+        html += `<div class="we-gallery-item" draggable="true" data-order-idx="${i}"><img src="${escapeAttr(src)}" alt=""><button type="button" data-idx="${i}">×</button></div>`;
       });
       list.innerHTML = html;
       list.querySelectorAll('button').forEach(b => {
         b.addEventListener('click', () => {
           const idx = parseInt(b.dataset.idx, 10);
-          if(b.dataset.kind === 'existing') weState.remainingImages.splice(idx, 1);
-          else weState.pendingGalleryFiles.splice(idx, 1);
+          weState.galleryOrder.splice(idx, 1);
           renderGalleryList();
           updatePreview();
         });
       });
+      list.querySelectorAll('.we-gallery-item').forEach(el => {
+        el.addEventListener('dragstart', () => {
+          galleryDragIdx = parseInt(el.dataset.orderIdx, 10);
+          el.classList.add('dragging');
+        });
+        el.addEventListener('dragend', () => {
+          el.classList.remove('dragging');
+          galleryDragIdx = null;
+        });
+      });
     }
     if(!isAbout) renderGalleryList();
+    if(!isAbout){
+      // Bound once (not inside renderGalleryList, which reruns on every
+      // add/remove/reorder) so the list container doesn't accumulate a
+      // duplicate listener on each re-render.
+      const galleryList = overlay.querySelector('#weGalleryList');
+      galleryList.addEventListener('dragover', (e) => {
+        if(galleryDragIdx === null) return;
+        e.preventDefault();
+        const dragging = galleryList.querySelector('.we-gallery-item.dragging');
+        if(!dragging) return;
+        const after = getGalleryDragAfterElement(galleryList, e.clientX, e.clientY, dragging);
+        if(after == null) galleryList.appendChild(dragging);
+        else galleryList.insertBefore(dragging, after);
+      });
+      galleryList.addEventListener('drop', (e) => {
+        if(galleryDragIdx === null) return;
+        e.preventDefault();
+        const newOrder = [...galleryList.querySelectorAll('.we-gallery-item')]
+          .map(el => weState.galleryOrder[parseInt(el.dataset.orderIdx, 10)]);
+        weState.galleryOrder = newOrder;
+        renderGalleryList();
+        updatePreview();
+      });
+    }
 
     if(!isAbout){
       const thumbFileInput = overlay.querySelector('#weThumbFile');
@@ -1882,7 +1938,7 @@
 
       const galleryFileInput = overlay.querySelector('#weGalleryFile');
       galleryFileInput.addEventListener('change', () => {
-        weState.pendingGalleryFiles.push(...Array.from(galleryFileInput.files));
+        Array.from(galleryFileInput.files).forEach(f => weState.galleryOrder.push({ kind: 'pending', ref: f }));
         galleryFileInput.value = '';
         renderGalleryList();
         updatePreview();
@@ -1938,9 +1994,20 @@
       const embed = parseEmbedUrl(overlay.querySelector('#weEmbed').value);
       const files = {};
       if(weState.pendingThumbFile) files['THUMB'] = weState.pendingThumbFile;
-      weState.pendingGalleryFiles.forEach((f, i) => {
-        files[`GAL${i + 1}`] = f;
+      // Assign upload tokens (GAL1, GAL2, ...) to pending files in their
+      // CURRENT (possibly drag-reordered) position, and build imageOrder as
+      // the full interleaved sequence of existing paths and new-upload
+      // tokens -- this is what lets the Worker place newly-added images
+      // anywhere in the gallery, not just appended at the end.
+      let galIdx = 0;
+      const imageOrder = weState.galleryOrder.map(it => {
+        if(it.kind === 'existing') return it.ref;
+        galIdx++;
+        const token = `GAL${galIdx}`;
+        files[token] = it.ref;
+        return token;
       });
+      const existingImages = weState.galleryOrder.filter(it => it.kind === 'existing').map(it => it.ref);
       const catClean = category.replace(/[【】\[\]]/g, '').trim();
       const defaultSubtitle = catClean ? `${catClean} @${title}` : title;
       const finalSubtitleEn = overlay.querySelector('#weSubtitleEn').value.trim() || defaultSubtitle;
@@ -1959,10 +2026,11 @@
         meta: '',
         note: '',
         embed,
-        existingImages: weState.remainingImages,
+        existingImages,
+        imageOrder,
         currentThumb: (!isNew && work) ? work.thumb : null,
         newThumbnail: weState.pendingThumbFile ? 'THUMB' : null,
-        newGalleryImages: weState.pendingGalleryFiles.map((f, i) => `GAL${i + 1}`),
+        newGalleryImages: imageOrder.filter(t => /^GAL\d+$/.test(t)),
         galleryLayout: overlay.querySelector('#weGalleryLayout').value
       };
       await publishSiteUpdate(payload, files, status);
