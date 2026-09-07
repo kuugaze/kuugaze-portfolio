@@ -12,8 +12,8 @@
   "showName": true,
   "showRole": true,
   "showInstagram": true,
-  "showX": false,
-  "xUrl": "",
-  "bannerHeight": 190,
-  "siteWidth": 1240
+  "showX": true,
+  "xUrl": "https://x.com/kuugaze",
+  "bannerHeight": 70,
+  "siteWidth": 1490
 }
