@@ -1503,9 +1503,6 @@
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-jp-toolbar')}
           <div class="rte-editor" id="weJp"></div>
         </div>
-        <div class="we-field"><label>サブ見出し（任意）</label><input type="text" id="weHeading2" value="${isNew ? '' : escapeAttr(work.heading2 || '')}"></div>
-        <div class="we-field"><label>メタ情報（任意）</label><textarea id="weMeta" rows="3">${isNew ? '' : escapeHtml(work.meta || '')}</textarea></div>
-        <div class="we-field"><label>補足テキスト（任意）</label><textarea id="weNote" rows="3">${isNew ? '' : escapeHtml(work.note || '')}</textarea></div>
         <div class="we-field"><label>動画URL（YouTube / Vimeo・任意）</label><input type="text" id="weEmbed" value="${isNew ? '' : escapeAttr(embedToUrl(work.embed))}" placeholder="https://youtu.be/..."></div>
         <div class="we-field">
           <label>ギャラリー画像</label>
@@ -1597,9 +1594,6 @@
         subtitleJp,
         en: weEnEl ? serializeEditorContent(weEnEl) : '',
         jp: weJpEl ? serializeEditorContent(weJpEl) : '',
-        heading2: (overlay.querySelector('#weHeading2')?.value || '').trim(),
-        meta: overlay.querySelector('#weMeta')?.value || '',
-        note: overlay.querySelector('#weNote')?.value || '',
         embed,
         images,
         galleryLayout: overlay.querySelector('#weGalleryLayout')?.value || 'grid'
@@ -1614,8 +1608,30 @@
     if(!isAbout){
       const weEnEl = overlay.querySelector('#weEn');
       const weJpEl = overlay.querySelector('#weJp');
-      loadIntoEditor(weEnEl, isNew ? '' : (work.en || ''));
-      loadIntoEditor(weJpEl, isNew ? '' : (work.jp || ''));
+      let initialEn = isNew ? '' : (work.en || '');
+      let initialJp = isNew ? '' : (work.jp || '');
+      // Legacy works may still hold text in the old, separate heading2/meta/note
+      // fields (no longer editable on their own). Fold that text into the body
+      // so it becomes visible and editable in place; it's written back into
+      // en/jp (and heading2/meta/note cleared) the next time this work is saved.
+      if(!isNew && work && (work.heading2 || work.meta || work.note)){
+        const extraParts = [];
+        if(work.heading2) extraParts.push('■' + work.heading2);
+        if(work.meta) extraParts.push(work.meta);
+        if(work.note) extraParts.push(work.note);
+        const extraText = extraParts.join('\n\n');
+        const appendTo = (base) => {
+          if(looksLikeHtml(base)){
+            const extraHtml = escapeHtml(extraText).replace(/\n/g, '<br>');
+            return base ? (base + '<br><br>' + extraHtml) : extraHtml;
+          }
+          return base ? (base + '\n\n' + extraText) : extraText;
+        };
+        initialEn = appendTo(initialEn);
+        initialJp = appendTo(initialJp);
+      }
+      loadIntoEditor(weEnEl, initialEn);
+      loadIntoEditor(weJpEl, initialJp);
       setupRichEditor(overlay.querySelector('.we-en-toolbar'), weEnEl, updatePreview);
       setupRichEditor(overlay.querySelector('.we-jp-toolbar'), weJpEl, updatePreview);
       overlay.querySelector('#weCategory')?.addEventListener('input', updatePreview);
@@ -1624,9 +1640,6 @@
       overlay.querySelector('#weSubtitleJp')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weEmbed')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weGalleryLayout')?.addEventListener('change', updatePreview);
-      overlay.querySelector('#weHeading2')?.addEventListener('input', updatePreview);
-      overlay.querySelector('#weMeta')?.addEventListener('input', updatePreview);
-      overlay.querySelector('#weNote')?.addEventListener('input', updatePreview);
     }else{
       const weAboutEnEl = overlay.querySelector('#weAboutEn');
       const weAboutJpEl = overlay.querySelector('#weAboutJp');
@@ -1748,9 +1761,9 @@
         subtitleJp: finalSubtitleJp,
         jp: serializeEditorContent(overlay.querySelector('#weJp')).trim(),
         en: serializeEditorContent(overlay.querySelector('#weEn')).trim(),
-        heading2: overlay.querySelector('#weHeading2').value.trim(),
-        meta: overlay.querySelector('#weMeta').value.trim(),
-        note: overlay.querySelector('#weNote').value.trim(),
+        heading2: '',
+        meta: '',
+        note: '',
         embed,
         existingImages: weState.remainingImages,
         currentThumb: (!isNew && work) ? work.thumb : null,
@@ -1795,7 +1808,6 @@
     const panel = document.createElement('div');
     panel.id = 'siteSettingsPanel';
     panel.innerHTML = `
-      <div class="admin-title">サイト設定</div>
       <div class="we-field">
         <label>プロフィール画像</label>
         <img class="we-thumb-preview" id="ssAvatarPreview" src="images/avatar.png" style="width:64px;height:64px;border-radius:50%;">
