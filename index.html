@@ -1741,18 +1741,20 @@
     // picked in this editing session but not yet uploaded. Keeping order and
     // membership in one array (instead of two separate lists) is what makes
     // drag-to-reorder work uniformly across both existing and new images.
+    const initialImages = isAbout ? (ABOUT.images || []) : ((!isNew && work.images) ? work.images : []);
     weState = {
       key: isAbout ? null : (isNew ? null : work.key),
       pendingThumbFile: null,
       pendingAvatarFile: null,
       pendingBannerFile: null,
-      galleryOrder: (!isAbout && !isNew && work.images) ? work.images.map(p => ({ kind: 'existing', ref: p })) : []
+      galleryOrder: initialImages.map(p => ({ kind: 'existing', ref: p }))
     };
 
-    const thumbFieldHtml = isAbout ? '' : `
+    const currentThumb = isAbout ? (ABOUT.thumb || '') : (isNew ? '' : (work.thumb || ''));
+    const thumbFieldHtml = `
         <div class="we-field">
           <label>サムネイル</label>
-          <img class="we-thumb-preview" id="weThumbPreview" src="${isNew ? '' : escapeAttr(resolveImgSrc(work.thumb))}" ${isNew ? 'style="display:none"' : ''}>
+          <img class="we-thumb-preview" id="weThumbPreview" src="${currentThumb ? escapeAttr(resolveImgSrc(currentThumb)) : ''}" ${currentThumb ? '' : 'style="display:none"'}>
           <input type="file" id="weThumbFile" accept="image/*">
         </div>`;
     const categoryTitleHtml = isAbout ? '' : `
@@ -1801,19 +1803,6 @@
           <label>本文（日本語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-jp-toolbar')}
           <div class="rte-editor" id="weJp"></div>
-        </div>
-        <div class="we-field"><label>動画URL（YouTube / Vimeo・任意）</label><input type="text" id="weEmbed" value="${isNew ? '' : escapeAttr(embedToUrl(work.embed))}" placeholder="https://youtu.be/..."></div>
-        <div class="we-field">
-          <label>ギャラリー画像</label>
-          <div class="we-gallery-list" id="weGalleryList"></div>
-          <input type="file" id="weGalleryFile" accept="image/*" multiple>
-        </div>
-        <div class="we-field">
-          <label>ギャラリー表示形式</label>
-          <select id="weGalleryLayout">
-            <option value="grid" ${(!isNew && work && work.galleryLayout === 'single') ? '' : 'selected'}>2列</option>
-            <option value="single" ${(!isNew && work && work.galleryLayout === 'single') ? 'selected' : ''}>1列</option>
-          </select>
         </div>`;
     const aboutFieldsHtml = isAbout ? `
         <div class="we-field">
@@ -1826,6 +1815,24 @@
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-jp-toolbar')}
           <div class="rte-editor" id="weAboutJp"></div>
         </div>` : '';
+    // Video embed + gallery are available for both regular works and About,
+    // so this block (unlike the two above) is never blanked out by isAbout.
+    const currentEmbed = isAbout ? ABOUT.embed : (isNew ? null : work.embed);
+    const currentGalleryLayout = isAbout ? ABOUT.galleryLayout : (isNew ? null : (work && work.galleryLayout));
+    const embedGalleryHtml = `
+        <div class="we-field"><label>動画URL（YouTube / Vimeo・任意）</label><input type="text" id="weEmbed" value="${escapeAttr(embedToUrl(currentEmbed))}" placeholder="https://youtu.be/..."></div>
+        <div class="we-field">
+          <label>ギャラリー画像</label>
+          <div class="we-gallery-list" id="weGalleryList"></div>
+          <input type="file" id="weGalleryFile" accept="image/*" multiple>
+        </div>
+        <div class="we-field">
+          <label>ギャラリー表示形式</label>
+          <select id="weGalleryLayout">
+            <option value="grid" ${currentGalleryLayout === 'single' ? '' : 'selected'}>2列</option>
+            <option value="single" ${currentGalleryLayout === 'single' ? 'selected' : ''}>1列</option>
+          </select>
+        </div>`;
 
     const overlay = document.createElement('div');
     overlay.id = 'workEditorOverlay';
@@ -1838,6 +1845,7 @@
             ${categoryTitleHtml}
             ${aboutFieldsHtml}
             ${enJpEmbedGalleryHtml}
+            ${embedGalleryHtml}
             <div class="we-actions">
               <button type="button" class="we-save-btn" id="weCopyBtn">公開する</button>
               <button type="button" class="we-cancel-btn" id="weCancelBtn">閉じる</button>
@@ -1857,24 +1865,28 @@
     document.body.appendChild(overlay);
 
     function buildPreviewData(){
+      const embed = parseEmbedUrl(overlay.querySelector('#weEmbed')?.value || '');
+      const images = weState.galleryOrder.map(it => it.kind === 'existing' ? resolveImgSrc(it.ref) : URL.createObjectURL(it.ref));
+      const galleryLayout = overlay.querySelector('#weGalleryLayout')?.value || 'grid';
       if(isAbout){
         const weAboutEnEl = overlay.querySelector('#weAboutEn');
         const weAboutJpEl = overlay.querySelector('#weAboutJp');
         return {
           en: weAboutEnEl ? serializeEditorContent(weAboutEnEl) : '',
-          jp: weAboutJpEl ? serializeEditorContent(weAboutJpEl) : ''
+          jp: weAboutJpEl ? serializeEditorContent(weAboutJpEl) : '',
+          embed,
+          images,
+          galleryLayout
         };
       }
       const weEnEl = overlay.querySelector('#weEn');
       const weJpEl = overlay.querySelector('#weJp');
-      const embed = parseEmbedUrl(overlay.querySelector('#weEmbed')?.value || '');
-      const images = weState.galleryOrder.map(it => it.kind === 'existing' ? resolveImgSrc(it.ref) : URL.createObjectURL(it.ref));
       return {
         en: weEnEl ? serializeEditorContent(weEnEl) : '',
         jp: weJpEl ? serializeEditorContent(weJpEl) : '',
         embed,
         images,
-        galleryLayout: overlay.querySelector('#weGalleryLayout')?.value || 'grid'
+        galleryLayout
       };
     }
     function updatePreview(){
@@ -1916,8 +1928,6 @@
       setupRichEditor(overlay.querySelector('.we-jp-toolbar'), weJpEl, updatePreview);
       overlay.querySelector('#weCategory')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weTitle')?.addEventListener('input', updatePreview);
-      overlay.querySelector('#weEmbed')?.addEventListener('input', updatePreview);
-      overlay.querySelector('#weGalleryLayout')?.addEventListener('change', updatePreview);
     }else{
       const weAboutEnEl = overlay.querySelector('#weAboutEn');
       const weAboutJpEl = overlay.querySelector('#weAboutJp');
@@ -1928,6 +1938,10 @@
       setupRichEditor(overlay.querySelector('.we-about-en-toolbar'), weAboutEnEl, updatePreview);
       setupRichEditor(overlay.querySelector('.we-about-jp-toolbar'), weAboutJpEl, updatePreview);
     }
+    // Video embed + gallery live outside the isAbout branch above since both
+    // work and About now share these fields.
+    overlay.querySelector('#weEmbed')?.addEventListener('input', updatePreview);
+    overlay.querySelector('#weGalleryLayout')?.addEventListener('change', updatePreview);
 
     // Finds the gallery item a dragged thumbnail should be inserted before,
     // by nearest-center distance -- the same technique used for reordering
@@ -1975,8 +1989,10 @@
         });
       });
     }
-    if(!isAbout) renderGalleryList();
-    if(!isAbout){
+    // Gallery + thumbnail are shared by both work and About editors now, so
+    // none of this is gated by isAbout any more.
+    renderGalleryList();
+    {
       // Bound once (not inside renderGalleryList, which reruns on every
       // add/remove/reorder) so the list container doesn't accumulate a
       // duplicate listener on each re-render.
@@ -2001,7 +2017,7 @@
       });
     }
 
-    if(!isAbout){
+    {
       const thumbFileInput = overlay.querySelector('#weThumbFile');
       const thumbPreview = overlay.querySelector('#weThumbPreview');
       thumbFileInput.addEventListener('change', () => {
@@ -2031,6 +2047,28 @@
     overlay.querySelector('#weCopyBtn').addEventListener('click', async () => {
       const status = overlay.querySelector('#weStatus');
 
+      // Thumbnail + video embed + gallery are shared by both work and About
+      // saves now, so this part is built once regardless of isAbout.
+      const embed = parseEmbedUrl(overlay.querySelector('#weEmbed').value);
+      const files = {};
+      if(weState.pendingThumbFile) files['THUMB'] = weState.pendingThumbFile;
+      // Assign upload tokens (GAL1, GAL2, ...) to pending files in their
+      // CURRENT (possibly drag-reordered) position, and build imageOrder as
+      // the full interleaved sequence of existing paths and new-upload
+      // tokens -- this is what lets the Worker place newly-added images
+      // anywhere in the gallery, not just appended at the end.
+      let galIdx = 0;
+      const imageOrder = weState.galleryOrder.map(it => {
+        if(it.kind === 'existing') return it.ref;
+        galIdx++;
+        const token = `GAL${galIdx}`;
+        files[token] = it.ref;
+        return token;
+      });
+      const existingImages = weState.galleryOrder.filter(it => it.kind === 'existing').map(it => it.ref);
+      const newGalleryImages = imageOrder.filter(t => /^GAL\d+$/.test(t));
+      const galleryLayout = overlay.querySelector('#weGalleryLayout').value;
+
       if(isAbout){
         const payload = {
           type: 'about',
@@ -2050,9 +2088,16 @@
           bannerHeight: ABOUT.bannerHeight || 190,
           siteWidth: ABOUT.siteWidth || 1240,
           newAvatar: null,
-          newBanner: null
+          newBanner: null,
+          embed,
+          existingImages,
+          imageOrder,
+          currentThumb: ABOUT.thumb || null,
+          newThumbnail: weState.pendingThumbFile ? 'THUMB' : null,
+          newGalleryImages,
+          galleryLayout
         };
-        const success = await publishSiteUpdate(payload, {}, status);
+        const success = await publishSiteUpdate(payload, files, status);
         if(success){
           ABOUT.subtitleEn = payload.subtitleEn;
           ABOUT.subtitleJp = payload.subtitleJp;
@@ -2066,23 +2111,6 @@
       const title = overlay.querySelector('#weTitle').value.trim();
       if(!title){ status.textContent = 'タイトルを入力してください'; return; }
       const category = overlay.querySelector('#weCategory').value.trim();
-      const embed = parseEmbedUrl(overlay.querySelector('#weEmbed').value);
-      const files = {};
-      if(weState.pendingThumbFile) files['THUMB'] = weState.pendingThumbFile;
-      // Assign upload tokens (GAL1, GAL2, ...) to pending files in their
-      // CURRENT (possibly drag-reordered) position, and build imageOrder as
-      // the full interleaved sequence of existing paths and new-upload
-      // tokens -- this is what lets the Worker place newly-added images
-      // anywhere in the gallery, not just appended at the end.
-      let galIdx = 0;
-      const imageOrder = weState.galleryOrder.map(it => {
-        if(it.kind === 'existing') return it.ref;
-        galIdx++;
-        const token = `GAL${galIdx}`;
-        files[token] = it.ref;
-        return token;
-      });
-      const existingImages = weState.galleryOrder.filter(it => it.kind === 'existing').map(it => it.ref);
       const payload = {
         type: 'work',
         key: weState.key,
@@ -2101,8 +2129,8 @@
         imageOrder,
         currentThumb: (!isNew && work) ? work.thumb : null,
         newThumbnail: weState.pendingThumbFile ? 'THUMB' : null,
-        newGalleryImages: imageOrder.filter(t => /^GAL\d+$/.test(t)),
-        galleryLayout: overlay.querySelector('#weGalleryLayout').value
+        newGalleryImages,
+        galleryLayout
       };
       const workSaveSuccess = await publishSiteUpdate(payload, files, status);
       if(workSaveSuccess) hardReload();
@@ -2349,7 +2377,17 @@
         bannerHeight: parseInt(bannerHeightInput.value, 10),
         siteWidth: parseInt(siteWidthInput.value, 10),
         newAvatar: ssState.pendingAvatarFile ? 'AVATAR' : null,
-        newBanner: ssState.pendingBannerFile ? 'BANNER' : null
+        newBanner: ssState.pendingBannerFile ? 'BANNER' : null,
+        // This panel doesn't edit the thumbnail/video/gallery (that's done in
+        // the About content editor) -- pass the current values straight
+        // through unchanged so this save doesn't wipe them.
+        embed: ABOUT.embed || null,
+        galleryLayout: ABOUT.galleryLayout || 'grid',
+        existingImages: ABOUT.images || [],
+        imageOrder: ABOUT.images || [],
+        currentThumb: ABOUT.thumb || null,
+        newThumbnail: null,
+        newGalleryImages: []
       };
       const files = {};
       if(ssState.pendingAvatarFile) files['AVATAR'] = ssState.pendingAvatarFile;
@@ -2453,6 +2491,10 @@
         }else{
           profileXLinkEl.style.display = 'none';
         }
+      }
+      const aboutCardThumb = document.querySelector('.about-card .thumb');
+      if(aboutCardThumb && ABOUT.thumb){
+        aboutCardThumb.innerHTML = `<img src="${resolveImgSrc(ABOUT.thumb)}" alt="" loading="lazy">`;
       }
       document.documentElement.style.setProperty('--banner-height', (ABOUT.bannerHeight || 190) + 'px');
       document.documentElement.style.setProperty('--site-width', (ABOUT.siteWidth || 1240) + 'px');
