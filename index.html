@@ -226,6 +226,7 @@
     padding:40px 44px 48px;
     position:relative;
     box-shadow:0 24px 70px rgba(0,0,0,.45);
+    touch-action:pan-y;
   }
   .modal-close-btn{
     position:absolute;
@@ -1089,6 +1090,64 @@
   overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
   document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
   window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && !overlay.hidden) closeModal(); });
+
+  // --- Mobile: swipe right on an open work to dismiss it, instead of the
+  // browser's native right-swipe back-navigation moving the whole page. ---
+  (function(){
+    const modalEl = overlay.querySelector('.modal');
+    function isMobile(){ return window.matchMedia('(max-width:860px)').matches; }
+    let touchActive = false, dragging = false, startX = 0, startY = 0, dx = 0;
+    function resetModalPosition(){
+      modalEl.style.transition = '';
+      modalEl.style.transform = '';
+      modalEl.style.opacity = '';
+    }
+    modalEl.addEventListener('touchstart', (e)=>{
+      if(!isMobile() || overlay.hidden || e.touches.length !== 1){ touchActive = false; return; }
+      touchActive = true; dragging = false; dx = 0;
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    }, { passive:true });
+    modalEl.addEventListener('touchmove', (e)=>{
+      if(!touchActive) return;
+      const t = e.touches[0];
+      const mx = t.clientX - startX, my = t.clientY - startY;
+      if(!dragging){
+        if(Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+        // Claim the gesture only when it's a rightward, mostly-horizontal
+        // drag; anything else (vertical scroll, left swipe) is left alone.
+        dragging = mx > 0 && Math.abs(mx) > Math.abs(my) * 1.2;
+        if(!dragging){ touchActive = false; return; }
+      }
+      // We own this gesture: stop the browser's native back-navigation
+      // swipe from also firing, and drag the window with the finger.
+      e.preventDefault();
+      dx = Math.max(0, mx);
+      modalEl.style.transition = 'none';
+      modalEl.style.transform = `translateX(${dx}px)`;
+      modalEl.style.opacity = String(Math.max(0, 1 - dx / 400));
+    }, { passive:false });
+    modalEl.addEventListener('touchend', ()=>{
+      if(!touchActive) return;
+      touchActive = false;
+      if(dragging && dx > 100){
+        modalEl.style.transition = 'transform .22s ease, opacity .22s ease';
+        modalEl.style.transform = 'translateX(140%)';
+        modalEl.style.opacity = '0';
+        setTimeout(()=>{ closeModal(); resetModalPosition(); }, 220);
+      } else if(dragging){
+        modalEl.style.transition = 'transform .18s ease, opacity .18s ease';
+        modalEl.style.transform = '';
+        modalEl.style.opacity = '';
+        setTimeout(resetModalPosition, 180);
+      }
+      dragging = false;
+    });
+    modalEl.addEventListener('touchcancel', ()=>{
+      touchActive = false;
+      if(dragging) resetModalPosition();
+      dragging = false;
+    });
+  })();
 
   // --- Admin mode: drag-to-reorder (owner only) ---
   const ADMIN_KEY = 'kuugazeadmin';
