@@ -155,6 +155,11 @@
     margin-top:9px;
     line-height:1.45;
   }
+  /* Higher specificity than .about-card .caption's visibility:hidden (kept
+     below, to reserve the about-card's height so it still matches other
+     cards) so that toggling captions off shrinks every card -- about-card
+     included -- by the same amount instead of leaving it visibly taller. */
+  html.hide-captions .caption{ display:none; }
   .cap-label{
     display:block;
     font-size:11px;
@@ -398,6 +403,10 @@
     min-height:14px;
     line-height:1.5;
   }
+  /* When there's no status message yet, don't reserve any space for it --
+     otherwise it sits as a permanent empty gap between the buttons above
+     and below it. */
+  #adminStatus:empty, #adminAddStatus:empty{ display:none; }
   #siteSettingsPanel{
     position:fixed;
     left:16px; bottom:16px;
@@ -2225,7 +2234,8 @@
         <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowName" ${ABOUT.showName === false ? '' : 'checked'}> 名前を表示</label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowRole" ${ABOUT.showRole === false ? '' : 'checked'}> 肩書を表示</label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowInstagram" ${ABOUT.showInstagram === false ? '' : 'checked'}> Instagramリンクを表示</label>
-        <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);"><input type="checkbox" id="ssShowX" ${ABOUT.showX === true ? 'checked' : ''}> X（Twitter）リンクを表示</label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowX" ${ABOUT.showX === true ? 'checked' : ''}> X（Twitter）リンクを表示</label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);"><input type="checkbox" id="ssShowCaptions" ${ABOUT.showCaptions === false ? '' : 'checked'}> 作品のカテゴリ・タイトルを表示</label>
       </div>
       <div class="we-field">
         <label>InstagramのURL</label>
@@ -2321,6 +2331,7 @@
     const showRoleInput = panel.querySelector('#ssShowRole');
     const showInstagramInput = panel.querySelector('#ssShowInstagram');
     const showXInput = panel.querySelector('#ssShowX');
+    const showCaptionsInput = panel.querySelector('#ssShowCaptions');
     const instagramUrlInput = panel.querySelector('#ssInstagramUrl');
     const xUrlInput = panel.querySelector('#ssXUrl');
     showNameInput.addEventListener('change', () => {
@@ -2356,6 +2367,9 @@
     }
     showXInput.addEventListener('change', applyXLinkPreview);
     xUrlInput.addEventListener('input', applyXLinkPreview);
+    showCaptionsInput.addEventListener('change', () => {
+      document.documentElement.classList.toggle('hide-captions', !showCaptionsInput.checked);
+    });
 
     panel.querySelector('#ssSaveBtn').addEventListener('click', async () => {
       const status = panel.querySelector('#ssStatus');
@@ -2378,6 +2392,7 @@
         showRole: showRoleInput.checked,
         showInstagram: showInstagramInput.checked,
         showX: showXInput.checked,
+        showCaptions: showCaptionsInput.checked,
         xUrl: xUrlInput.value.trim(),
         bannerHeight: parseInt(bannerHeightInput.value, 10),
         siteWidth: parseInt(siteWidthInput.value, 10),
@@ -2410,6 +2425,7 @@
         ABOUT.showRole = payload.showRole;
         ABOUT.showInstagram = payload.showInstagram;
         ABOUT.showX = payload.showX;
+        ABOUT.showCaptions = payload.showCaptions;
         ABOUT.xUrl = payload.xUrl;
         ABOUT.bannerHeight = payload.bannerHeight;
         ABOUT.siteWidth = payload.siteWidth;
@@ -2513,6 +2529,10 @@
       document.documentElement.style.setProperty('--grid-columns', String(ABOUT.gridColumns || 4));
       document.documentElement.style.setProperty('--grid-gap-x', (ABOUT.gridGapX ?? 16) + 'px');
       document.documentElement.style.setProperty('--grid-gap-y', (ABOUT.gridGapY ?? 20) + 'px');
+      // Hiding captions shrinks every card down to just its thumbnail, so
+      // the row-gap above becomes the only vertical space between rows --
+      // no separate "fill the gap" logic needed.
+      document.documentElement.classList.toggle('hide-captions', ABOUT.showCaptions === false);
       const adminVerified = isAdmin ? await verifyAdminAccess() : false;
       if(adminVerified){
         // The public works.json above never contains hidden works -- fetch
