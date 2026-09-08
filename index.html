@@ -2436,7 +2436,14 @@
         ABOUT.gridColumns = payload.gridColumns;
         ABOUT.gridGapX = payload.gridGapX;
         ABOUT.gridGapY = payload.gridGapY;
-        hardReload();
+        // Every field this panel edits already has a live-preview listener
+        // (see above) that applies it to the real page the instant it
+        // changes, so the page is already showing the just-saved state --
+        // no reload needed. Reloading here would actually be *worse*: it
+        // re-fetches index.html/about.json from GitHub Pages, which can
+        // still be serving the pre-save version for up to a minute or two
+        // after the commit (CDN propagation lag), making a successful save
+        // look like it silently reverted.
       }
     });
   }
