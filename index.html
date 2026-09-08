@@ -403,6 +403,7 @@
     width:250px;
     max-height:calc(100vh - 32px);
     overflow-y:auto;
+    overflow-x:hidden;
     display:flex;
     flex-direction:column;
     gap:2px;
@@ -2168,14 +2169,6 @@
     if(existing) return;
 
     ssState = { pendingAvatarFile: null, pendingBannerFile: null };
-    let originalBannerHeightPx = (ABOUT.bannerHeight || 190) + 'px';
-    let originalSiteWidthPx = (ABOUT.siteWidth || 1240) + 'px';
-    let originalName = ABOUT.name || 'kuugaze';
-    let originalRole = ABOUT.role || 'Digital Artist based in Tokyo, Japan';
-    let originalLoc = ABOUT.loc || '3DCG, VR, AudioVisual';
-    let originalShowX = ABOUT.showX === true;
-    let originalXUrl = ABOUT.xUrl || '';
-    let originalInstagramUrl = ABOUT.instagramUrl || '';
 
     const panel = document.createElement('div');
     panel.id = 'siteSettingsPanel';
@@ -2224,7 +2217,6 @@
         <input type="text" id="ssXUrl" placeholder="https://x.com/yourname" value="${escapeAttr(ABOUT.xUrl || '')}">
       </div>
       <button id="ssSaveBtn">保存して公開する</button>
-      <button id="ssCloseBtn" style="background:var(--line);color:var(--ink);">閉じる</button>
       <div id="ssStatus"></div>
     `;
     document.body.appendChild(panel);
@@ -2325,46 +2317,6 @@
     showXInput.addEventListener('change', applyXLinkPreview);
     xUrlInput.addEventListener('input', applyXLinkPreview);
 
-    panel.querySelector('#ssCloseBtn').addEventListener('click', () => {
-      document.documentElement.style.setProperty('--banner-height', originalBannerHeightPx);
-      document.documentElement.style.setProperty('--site-width', originalSiteWidthPx);
-      const realAvatar = document.querySelector('.avatar');
-      if(realAvatar) realAvatar.src = 'images/avatar.png';
-      const realBanner = document.querySelector('.banner');
-      if(realBanner) realBanner.style.backgroundImage = '';
-      const profileNameEl = document.getElementById('profileName');
-      const profileRoleEl = document.getElementById('profileRole');
-      const profileLocEl = document.getElementById('profileLoc');
-      const profileInstagramLinkEl = document.getElementById('profileInstagramLink');
-      const profileXLinkEl = document.getElementById('profileXLink');
-      if(profileNameEl){
-        profileNameEl.textContent = originalName;
-        profileNameEl.style.display = (ABOUT.showName === false) ? 'none' : '';
-      }
-      if(profileRoleEl){
-        profileRoleEl.textContent = originalRole;
-        profileRoleEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
-      }
-      if(profileLocEl){
-        profileLocEl.textContent = originalLoc;
-        profileLocEl.style.display = (ABOUT.showRole === false) ? 'none' : '';
-      }
-      if(profileInstagramLinkEl){
-        profileInstagramLinkEl.href = originalInstagramUrl || 'https://instagram.com/kuugaze';
-        profileInstagramLinkEl.style.display = (ABOUT.showInstagram === false) ? 'none' : '';
-      }
-      if(profileXLinkEl){
-        if(originalShowX && originalXUrl){
-          profileXLinkEl.href = originalXUrl;
-          profileXLinkEl.style.display = '';
-        }else{
-          profileXLinkEl.style.display = 'none';
-        }
-      }
-      panel.remove();
-      ssState = null;
-    });
-
     panel.querySelector('#ssSaveBtn').addEventListener('click', async () => {
       const status = panel.querySelector('#ssStatus');
       const roleLines = roleInput.value.split('\n');
@@ -2429,9 +2381,8 @@
     panel.innerHTML = `
       <div class="admin-title">管理者モード</div>
       <div class="admin-desc">カードをドラッグして並び替え、左上の「編集」でサムネ・キャプション・画像・動画を変更、右上のボタンで公開・非公開を切り替えられます。変更したらボタンを押すと自動でサイトに反映されます（確認や送信操作は不要です）。</div>
-      <button id="adminCopyBtn">並び替え・公開状態を保存する</button>
+      <button id="adminCopyBtn">並び替えを保存する</button>
       <div id="adminStatus"></div>
-      <hr class="admin-divider">
       <button id="adminAddNewBtn">＋ 新しい作品を追加</button>
       <button id="adminHardReloadBtn" title="Ctrl+Shift+R相当：キャッシュを無視して再読み込み">🔄 強制再読み込み</button>
     `;
