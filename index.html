@@ -462,6 +462,16 @@
     color:var(--ink);
     background:var(--card-bg);
   }
+  .drop-hint{
+    font-size:11px;
+    color:var(--sub);
+    margin-left:8px;
+  }
+  .we-field.drag-over{
+    outline:2px dashed var(--accent);
+    outline-offset:6px;
+    border-radius:6px;
+  }
   #siteSettingsPanel input[type="text"],
   #siteSettingsPanel textarea{
     font-size:12px;
@@ -1568,6 +1578,44 @@
   function resolveImgSrc(path){
     return PRIVATE_IMAGE_URLS.get(path) || path;
   }
+  // Lets an image upload field accept a drag-and-dropped file, not just a
+  // click-to-browse selection. zoneEl is the field's whole container (so
+  // the drop target is generously sized, not just the tiny native
+  // button); dropped files are handed to fileInput via a DataTransfer
+  // (the standard way to set input.files programmatically) and a real
+  // 'change' event is dispatched, so this reuses each field's existing
+  // change handler instead of duplicating its upload logic.
+  function enableDropUpload(zoneEl, fileInput){
+    if(!zoneEl || !fileInput) return;
+    ['dragenter', 'dragover'].forEach(evt => {
+      zoneEl.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        zoneEl.classList.add('drag-over');
+      });
+    });
+    ['dragleave', 'dragend'].forEach(evt => {
+      zoneEl.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        zoneEl.classList.remove('drag-over');
+      });
+    });
+    zoneEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      zoneEl.classList.remove('drag-over');
+      const dropped = e.dataTransfer && e.dataTransfer.files;
+      if(!dropped || !dropped.length) return;
+      const dt = new DataTransfer();
+      Array.from(dropped).forEach(f => {
+        if(f.type.startsWith('image/')) dt.items.add(f);
+      });
+      if(!dt.files.length) return;
+      fileInput.files = dt.files;
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
   async function fetchPrivateImage(path, secret){
     const form = new FormData();
     form.append('payload', JSON.stringify({ type: 'get_image', path }));
@@ -1858,6 +1906,7 @@
           <label>サムネイル</label>
           <img class="we-thumb-preview" id="weThumbPreview" src="${currentThumb ? escapeAttr(resolveImgSrc(currentThumb)) : ''}" ${currentThumb ? '' : 'style="display:none"'}>
           <input type="file" id="weThumbFile" accept="image/*">
+          <span class="drop-hint">またはドラッグ&amp;ドロップ</span>
         </div>`;
     const categoryTitleHtml = isAbout ? '' : `
         <div class="we-field"><label>カテゴリ</label><input type="text" id="weCategory" value="${isNew ? '' : escapeAttr(work.category || '')}"></div>
@@ -1934,6 +1983,7 @@
           <label>ギャラリー画像</label>
           <div class="we-gallery-list" id="weGalleryList"></div>
           <input type="file" id="weGalleryFile" accept="image/*" multiple>
+          <span class="drop-hint">またはドラッグ&amp;ドロップ（複数可）</span>
         </div>
         <div class="we-field">
           <label>ギャラリー表示形式</label>
@@ -2158,6 +2208,9 @@
         renderGalleryList();
         updatePreview();
       });
+
+      enableDropUpload(thumbFileInput.closest('.we-field'), thumbFileInput);
+      enableDropUpload(galleryFileInput.closest('.we-field'), galleryFileInput);
     }
 
     updatePreview();
@@ -2349,12 +2402,14 @@
         <label>プロフィール画像</label>
         <img class="we-thumb-preview" id="ssAvatarPreview" src="images/avatar.png" style="width:64px;height:64px;border-radius:50%;">
         <label class="file-choose-btn" for="ssAvatarFile">ファイルを選択</label>
+        <span class="drop-hint">またはドラッグ&amp;ドロップ</span>
         <input type="file" id="ssAvatarFile" accept="image/*" class="file-input-visually-hidden">
       </div>
       <div class="we-field">
         <label>ヘッダー画像</label>
         <img class="we-thumb-preview" id="ssBannerPreview" src="images/banner.png" style="width:100%;height:60px;object-fit:cover;border-radius:4px;">
         <label class="file-choose-btn" for="ssBannerFile">ファイルを選択</label>
+        <span class="drop-hint">またはドラッグ&amp;ドロップ</span>
         <input type="file" id="ssBannerFile" accept="image/*" class="file-input-visually-hidden">
       </div>
       <div class="we-field">
@@ -2441,6 +2496,9 @@
       const realBanner = document.querySelector('.banner');
       if(realBanner) realBanner.style.backgroundImage = `url("${url}")`;
     });
+
+    enableDropUpload(avatarFileInput.closest('.we-field'), avatarFileInput);
+    enableDropUpload(bannerFileInput.closest('.we-field'), bannerFileInput);
 
     const nameInput = panel.querySelector('#ssName');
     nameInput.addEventListener('input', () => {
