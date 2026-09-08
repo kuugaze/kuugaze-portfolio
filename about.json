@@ -14,6 +14,9 @@
   "showX": true,
   "xUrl": "https://x.com/kuugaze",
   "bannerHeight": 70,
-  "siteWidth": 1190,
-  "galleryLayout": "grid"
+  "siteWidth": 1360,
+  "galleryLayout": "grid",
+  "gridColumns": 4,
+  "gridGapX": 0,
+  "gridGapY": 0
 }
