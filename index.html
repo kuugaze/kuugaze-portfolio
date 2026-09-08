@@ -162,30 +162,32 @@
   html.hide-captions .caption{ display:none; }
   .cap-label{
     display:block;
-    font-size:11px;
-    font-weight:500;
-    color:var(--sub);
+    font-size:var(--caption-label-size, 11px);
+    font-weight:var(--caption-label-weight, 500);
+    color:var(--caption-label-color, var(--sub));
+    font-family:var(--caption-label-font, inherit);
     letter-spacing:.02em;
     margin-bottom:2px;
   }
   .cap-title{
     display:block;
-    font-size:13px;
-    font-weight:700;
-    color:var(--ink);
+    font-size:var(--caption-title-size, 13px);
+    font-weight:var(--caption-title-weight, 700);
+    color:var(--caption-title-color, var(--ink));
+    font-family:var(--caption-title-font, inherit);
   }
 
   .about-card .thumb{
     display:flex;
     align-items:center;
     justify-content:center;
-    border:1.5px solid var(--accent);
+    border:1.5px solid var(--about-thumb-color, var(--accent));
     background:var(--card-bg);
   }
   .about-card .thumb span{
     font-style:italic;
     font-size:19px;
-    color:var(--accent);
+    color:var(--about-thumb-color, var(--accent));
   }
   .about-card .caption{ visibility:hidden; }
 
@@ -1751,6 +1753,32 @@
     location.href = url.toString();
   }
 
+  // Applies the theme-color / caption-style / About-thumb-color settings as
+  // CSS custom properties. A set themeColor overrides the About thumb's
+  // color and both caption text colors; when it's cleared, each of those
+  // three falls back to its own individually-set color (or, if that's also
+  // unset, the site's default accent/ink/sub color via the CSS var()
+  // fallback chain already built into the rules that use these vars).
+  function setCssVar(name, value){
+    if(value !== null && value !== undefined && value !== ''){
+      document.documentElement.style.setProperty(name, value);
+    }else{
+      document.documentElement.style.removeProperty(name);
+    }
+  }
+  function applyThemeStyleVars(about){
+    const theme = about.themeColor || '';
+    setCssVar('--about-thumb-color', theme || about.aboutThumbColor || '');
+    setCssVar('--caption-label-color', theme || about.captionLabelColor || '');
+    setCssVar('--caption-title-color', theme || about.captionTitleColor || '');
+    setCssVar('--caption-label-font', about.captionLabelFont || '');
+    setCssVar('--caption-label-weight', about.captionLabelWeight || '');
+    setCssVar('--caption-label-size', about.captionLabelSize ? about.captionLabelSize + 'px' : '');
+    setCssVar('--caption-title-font', about.captionTitleFont || '');
+    setCssVar('--caption-title-weight', about.captionTitleWeight || '');
+    setCssVar('--caption-title-size', about.captionTitleSize ? about.captionTitleSize + 'px' : '');
+  }
+
   let weState = null;
   let ssState = null;
 
@@ -1832,6 +1860,13 @@
         </div>`;
     const aboutFieldsHtml = isAbout ? `
         <div class="we-field">
+          <label>サムネの色（文字色・枠線）</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="color" id="weAboutThumbColor" value="${ABOUT.aboutThumbColor || '#2b3fff'}">
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);"><input type="checkbox" id="weAboutThumbColorEnabled" ${ABOUT.aboutThumbColor ? 'checked' : ''}> 色を指定する（OFFでテーマ標準色）</label>
+          </div>
+        </div>
+        <div class="we-field">
           <label>本文（英語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-en-toolbar')}
           <div class="rte-editor" id="weAboutEn"></div>
@@ -1889,6 +1924,19 @@
       </div>
     `;
     document.body.appendChild(overlay);
+
+    if(isAbout){
+      const aboutThumbColorInput = overlay.querySelector('#weAboutThumbColor');
+      const aboutThumbColorEnabledInput = overlay.querySelector('#weAboutThumbColorEnabled');
+      function applyAboutThumbColorPreview(){
+        applyThemeStyleVars({
+          ...ABOUT,
+          aboutThumbColor: aboutThumbColorEnabledInput.checked ? aboutThumbColorInput.value : ''
+        });
+      }
+      aboutThumbColorInput.addEventListener('input', applyAboutThumbColorPreview);
+      aboutThumbColorEnabledInput.addEventListener('change', applyAboutThumbColorPreview);
+    }
 
     function buildPreviewData(){
       const embed = parseEmbedUrl(overlay.querySelector('#weEmbed')?.value || '');
@@ -2117,6 +2165,20 @@
           gridColumns: ABOUT.gridColumns || 4,
           gridGapX: ABOUT.gridGapX ?? 16,
           gridGapY: ABOUT.gridGapY ?? 20,
+          // This is the one theme-style field actually edited on this
+          // screen; the rest below are pass-throughs of the current value
+          // so this save doesn't wipe out what the site settings panel set.
+          aboutThumbColor: overlay.querySelector('#weAboutThumbColorEnabled').checked
+            ? overlay.querySelector('#weAboutThumbColor').value : '',
+          themeColor: ABOUT.themeColor || '',
+          captionLabelColor: ABOUT.captionLabelColor || '',
+          captionLabelFont: ABOUT.captionLabelFont || '',
+          captionLabelWeight: ABOUT.captionLabelWeight || '',
+          captionLabelSize: ABOUT.captionLabelSize || null,
+          captionTitleColor: ABOUT.captionTitleColor || '',
+          captionTitleFont: ABOUT.captionTitleFont || '',
+          captionTitleWeight: ABOUT.captionTitleWeight || '',
+          captionTitleSize: ABOUT.captionTitleSize || null,
           newAvatar: null,
           newBanner: null,
           embed,
@@ -2133,6 +2195,7 @@
           ABOUT.subtitleJp = payload.subtitleJp;
           ABOUT.en = payload.en;
           ABOUT.jp = payload.jp;
+          ABOUT.aboutThumbColor = payload.aboutThumbColor;
           hardReload();
         }
         return;
@@ -2184,11 +2247,51 @@
     }
   }
 
+  const CAPTION_FONT_OPTIONS = [
+    { value: '', label: 'デフォルト' },
+    { value: "'Helvetica Neue',Arial,sans-serif", label: 'ゴシック体' },
+    { value: "Georgia,'Times New Roman',serif", label: '明朝体' },
+    { value: "'Courier New',monospace", label: '等幅' },
+  ];
+  function captionStyleFieldHtml(idPrefix, labelText, colorDefault, weightDefault, sizeDefault, current){
+    current = current || {};
+    return `
+      <div class="we-field">
+        <label>${labelText}</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+          <input type="color" id="${idPrefix}Color" value="${current.color || colorDefault}">
+          <span style="font-size:11px;color:var(--sub);">文字色</span>
+        </div>
+        <select id="${idPrefix}Font" style="width:100%;margin-bottom:6px;">
+          ${CAPTION_FONT_OPTIONS.map(o => `<option value="${escapeAttr(o.value)}" ${(current.font || '') === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+        </select>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;">
+            <label style="font-size:11px;color:var(--sub);">太さ</label>
+            <select id="${idPrefix}Weight" style="width:100%;">
+              ${[400,500,600,700,800].map(w => `<option value="${w}" ${(current.weight || weightDefault) == w ? 'selected' : ''}>${w}</option>`).join('')}
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:11px;color:var(--sub);">サイズ(px)</label>
+            <input type="number" id="${idPrefix}Size" min="8" max="32" value="${current.size || sizeDefault}" style="width:100%;">
+          </div>
+        </div>
+      </div>`;
+  }
+
   function openSiteSettingsPanel(){
     const existing = document.getElementById('siteSettingsPanel');
     if(existing) return;
 
     ssState = { pendingAvatarFile: null, pendingBannerFile: null };
+
+    const captionLabelStyleHtml = captionStyleFieldHtml('ssCaptionLabel', 'カテゴリの文字スタイル', '#6b6b6b', 500, 11, {
+      color: ABOUT.captionLabelColor, font: ABOUT.captionLabelFont, weight: ABOUT.captionLabelWeight, size: ABOUT.captionLabelSize
+    });
+    const captionTitleStyleHtml = captionStyleFieldHtml('ssCaptionTitle', 'タイトルの文字スタイル', '#1a1a1a', 700, 13, {
+      color: ABOUT.captionTitleColor, font: ABOUT.captionTitleFont, weight: ABOUT.captionTitleWeight, size: ABOUT.captionTitleSize
+    });
 
     const panel = document.createElement('div');
     panel.id = 'siteSettingsPanel';
@@ -2249,6 +2352,16 @@
         <label>X（Twitter）のURL</label>
         <input type="text" id="ssXUrl" placeholder="https://x.com/yourname" value="${escapeAttr(ABOUT.xUrl || '')}">
       </div>
+      <div class="we-field">
+        <label>テーマカラー</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="color" id="ssThemeColor" value="${ABOUT.themeColor || '#2b3fff'}">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);"><input type="checkbox" id="ssThemeColorEnabled" ${ABOUT.themeColor ? 'checked' : ''}> テーマカラーを使う</label>
+        </div>
+        <div style="font-size:11px;color:var(--sub);margin-top:4px;">ONにすると、Aboutサムネの色と下記の作品キャプションの文字色を一括で変更します。OFFの場合は個別に設定できます。</div>
+      </div>
+      ${captionLabelStyleHtml}
+      ${captionTitleStyleHtml}
       <button id="ssSaveBtn">保存して公開する</button>
       <div id="ssStatus"></div>
     `;
@@ -2375,6 +2488,40 @@
       document.documentElement.classList.toggle('hide-captions', !showCaptionsInput.checked);
     });
 
+    const themeColorInput = panel.querySelector('#ssThemeColor');
+    const themeColorEnabledInput = panel.querySelector('#ssThemeColorEnabled');
+    const captionLabelColorInput = panel.querySelector('#ssCaptionLabelColor');
+    const captionLabelFontInput = panel.querySelector('#ssCaptionLabelFont');
+    const captionLabelWeightInput = panel.querySelector('#ssCaptionLabelWeight');
+    const captionLabelSizeInput = panel.querySelector('#ssCaptionLabelSize');
+    const captionTitleColorInput = panel.querySelector('#ssCaptionTitleColor');
+    const captionTitleFontInput = panel.querySelector('#ssCaptionTitleFont');
+    const captionTitleWeightInput = panel.querySelector('#ssCaptionTitleWeight');
+    const captionTitleSizeInput = panel.querySelector('#ssCaptionTitleSize');
+    function currentThemeStylePayload(){
+      return {
+        themeColor: themeColorEnabledInput.checked ? themeColorInput.value : '',
+        aboutThumbColor: ABOUT.aboutThumbColor || '',
+        captionLabelColor: captionLabelColorInput.value,
+        captionLabelFont: captionLabelFontInput.value,
+        captionLabelWeight: captionLabelWeightInput.value,
+        captionLabelSize: parseInt(captionLabelSizeInput.value, 10) || null,
+        captionTitleColor: captionTitleColorInput.value,
+        captionTitleFont: captionTitleFontInput.value,
+        captionTitleWeight: captionTitleWeightInput.value,
+        captionTitleSize: parseInt(captionTitleSizeInput.value, 10) || null,
+      };
+    }
+    function applyThemeStylePreview(){
+      applyThemeStyleVars(currentThemeStylePayload());
+    }
+    [themeColorInput, themeColorEnabledInput, captionLabelColorInput, captionLabelFontInput,
+     captionLabelWeightInput, captionLabelSizeInput, captionTitleColorInput, captionTitleFontInput,
+     captionTitleWeightInput, captionTitleSizeInput].forEach(el => {
+      el.addEventListener('input', applyThemeStylePreview);
+      el.addEventListener('change', applyThemeStylePreview);
+    });
+
     panel.querySelector('#ssSaveBtn').addEventListener('click', async () => {
       const status = panel.querySelector('#ssStatus');
       const roleLines = roleInput.value.split('\n');
@@ -2403,6 +2550,7 @@
         gridColumns: parseInt(gridColumnsInput.value, 10),
         gridGapX: parseInt(gridGapXInput.value, 10),
         gridGapY: parseInt(gridGapYInput.value, 10),
+        ...currentThemeStylePayload(),
         newAvatar: ssState.pendingAvatarFile ? 'AVATAR' : null,
         newBanner: ssState.pendingBannerFile ? 'BANNER' : null,
         // This panel doesn't edit the thumbnail/video/gallery (that's done in
@@ -2436,6 +2584,16 @@
         ABOUT.gridColumns = payload.gridColumns;
         ABOUT.gridGapX = payload.gridGapX;
         ABOUT.gridGapY = payload.gridGapY;
+        ABOUT.themeColor = payload.themeColor;
+        ABOUT.aboutThumbColor = payload.aboutThumbColor;
+        ABOUT.captionLabelColor = payload.captionLabelColor;
+        ABOUT.captionLabelFont = payload.captionLabelFont;
+        ABOUT.captionLabelWeight = payload.captionLabelWeight;
+        ABOUT.captionLabelSize = payload.captionLabelSize;
+        ABOUT.captionTitleColor = payload.captionTitleColor;
+        ABOUT.captionTitleFont = payload.captionTitleFont;
+        ABOUT.captionTitleWeight = payload.captionTitleWeight;
+        ABOUT.captionTitleSize = payload.captionTitleSize;
         // Every field this panel edits already has a live-preview listener
         // (see above) that applies it to the real page the instant it
         // changes, so the page is already showing the just-saved state --
@@ -2558,6 +2716,7 @@
       // the row-gap above becomes the only vertical space between rows --
       // no separate "fill the gap" logic needed.
       document.documentElement.classList.toggle('hide-captions', ABOUT.showCaptions === false);
+      applyThemeStyleVars(ABOUT);
       const adminVerified = isAdmin ? await verifyAdminAccess() : false;
       if(adminVerified){
         // The public works.json above never contains hidden works -- fetch
