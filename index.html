@@ -1062,6 +1062,7 @@
     const d = key === 'about' ? ABOUT : WORKS_BY_KEY[key];
     if(!d) return;
     body.innerHTML = renderProject(d);
+    applyThemeToRichText(body, ABOUT.themeColor);
     overlay.hidden = false;
     overlay.scrollTop = 0;
     lockBodyScroll();
@@ -1779,6 +1780,48 @@
     setCssVar('--caption-title-size', about.captionTitleSize ? about.captionTitleSize + 'px' : '');
   }
 
+  // Resolves any CSS color string (hex, rgb(), named color) to its
+  // "rgb(r, g, b)" form so different spellings of the same color (e.g.
+  // "#fff", "#ffffff", "white", "rgb(255,255,255)") compare equal.
+  function normalizeColor(colorStr){
+    const tmp = document.createElement('div');
+    tmp.style.display = 'none';
+    tmp.style.color = colorStr;
+    document.body.appendChild(tmp);
+    const rgb = getComputedStyle(tmp).color;
+    document.body.removeChild(tmp);
+    return rgb;
+  }
+  // Work/About body text is free-form rich text (the RTE lets the admin
+  // color individual words/lines via inline style="color:..." or legacy
+  // <font color="..."> tags). When a theme color is set, every colored
+  // run of text should switch to the theme color EXCEPT text the admin
+  // explicitly made white -- that's used as an "unstyled/default" color
+  // and should stay as-is. Only text with an actual inline color is
+  // touched; anything with no explicit color already follows the normal
+  // --ink text color and needs no change.
+  function applyThemeToRichText(container, themeColor){
+    if(!container || !themeColor) return;
+    const whiteRgb = normalizeColor('#ffffff');
+    const themeRgb = normalizeColor(themeColor);
+    container.querySelectorAll('[style*="color"]').forEach(el => {
+      const c = el.style.color;
+      if(!c) return;
+      const norm = normalizeColor(c);
+      if(norm !== whiteRgb && norm !== themeRgb){
+        el.style.color = themeColor;
+      }
+    });
+    container.querySelectorAll('font[color]').forEach(el => {
+      const c = el.getAttribute('color');
+      if(!c) return;
+      const norm = normalizeColor(c);
+      if(norm !== whiteRgb && norm !== themeRgb){
+        el.setAttribute('color', themeColor);
+      }
+    });
+  }
+
   let weState = null;
   let ssState = null;
 
@@ -1967,6 +2010,7 @@
       const previewBody = overlay.querySelector('#wePreviewBody');
       if(!previewBody) return;
       previewBody.innerHTML = renderProject(buildPreviewData());
+      applyThemeToRichText(previewBody, ABOUT.themeColor);
     }
 
     if(!isAbout){
