@@ -458,24 +458,19 @@
      specificity and wins regardless of source order) -- "label.file-
      choose-btn" ties it, so add ".we-field" too to win outright. */
   .we-field label.file-choose-btn{
-    /* Fixed white/flat regardless of light-or-dark theme, so every
+    /* Fixed black/flat/square regardless of light-or-dark theme, so every
        "ファイルを選択" button in the admin panel looks identical. */
     display:inline-block;
     font-size:11px;
     padding:6px 10px;
-    border:1px solid #dcdcdc;
-    border-radius:4px;
+    border:1px solid #000000;
+    border-radius:0;
     cursor:pointer;
-    color:#1a1a1a;
-    background:#ffffff;
+    color:#ffffff;
+    background:#000000;
   }
   .we-field label.file-choose-btn:hover{
-    background:#f2f2f2;
-  }
-  .drop-hint{
-    font-size:11px;
-    color:var(--sub);
-    margin-left:8px;
+    background:#2a2a2a;
   }
   .we-field.drag-over{
     outline:2px dashed var(--accent);
@@ -1866,7 +1861,6 @@
           <label>サムネイル</label>
           <img class="we-thumb-preview" id="weThumbPreview" src="${currentThumb ? escapeAttr(resolveImgSrc(currentThumb)) : ''}" ${currentThumb ? '' : 'style="display:none"'}>
           <label class="file-choose-btn" for="weThumbFile">ファイルを選択</label>
-          <span class="drop-hint">またはドラッグ&amp;ドロップ</span>
           <input type="file" id="weThumbFile" accept="image/*" class="file-input-visually-hidden">
         </div>`;
     const categoryTitleHtml = isAbout ? '' : `
@@ -1944,7 +1938,6 @@
           <label>ギャラリー画像</label>
           <div class="we-gallery-list" id="weGalleryList"></div>
           <label class="file-choose-btn" for="weGalleryFile">ファイルを選択</label>
-          <span class="drop-hint">またはドラッグ&amp;ドロップ（複数可）</span>
           <input type="file" id="weGalleryFile" accept="image/*" multiple class="file-input-visually-hidden">
         </div>
         <div class="we-field">
@@ -2362,14 +2355,12 @@
         <label>プロフィール画像</label>
         <img class="we-thumb-preview" id="ssAvatarPreview" src="images/avatar.png" style="width:64px;height:64px;border-radius:50%;">
         <label class="file-choose-btn" for="ssAvatarFile">ファイルを選択</label>
-        <span class="drop-hint">またはドラッグ&amp;ドロップ</span>
         <input type="file" id="ssAvatarFile" accept="image/*" class="file-input-visually-hidden">
       </div>
       <div class="we-field">
         <label>ヘッダー画像</label>
         <img class="we-thumb-preview" id="ssBannerPreview" src="images/banner.png" style="width:100%;height:60px;object-fit:cover;border-radius:4px;">
         <label class="file-choose-btn" for="ssBannerFile">ファイルを選択</label>
-        <span class="drop-hint">またはドラッグ&amp;ドロップ</span>
         <input type="file" id="ssBannerFile" accept="image/*" class="file-input-visually-hidden">
       </div>
       <div class="we-field">
