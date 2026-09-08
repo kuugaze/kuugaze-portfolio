@@ -2493,9 +2493,23 @@
     aboutThumb.insertBefore(btn, aboutThumb.firstChild);
   }
 
+  // Fetch the current data from the Worker (which reads it straight from
+  // the GitHub Contents API) rather than from GitHub Pages' own copy of
+  // works.json/about.json -- GitHub Pages is a static, CDN-cached host, so
+  // a page freshly saved by the admin can still serve the old file there
+  // for a minute or two after the commit. The Contents API has no such
+  // cache, so every visitor sees the latest save immediately. Falls back
+  // to the GitHub Pages copy if the Worker is unreachable, so the site
+  // still works even if the Worker is down.
+  function fetchLive(liveType, staticPath){
+    return fetch(WORKER_URL + '?live=' + liveType + '&_=' + Date.now(), { cache: 'no-store' })
+      .then(r => { if(!r.ok) throw new Error('live fetch failed: ' + r.status); return r.json(); })
+      .catch(() => fetch(staticPath + '?_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()));
+  }
+
   Promise.all([
-    fetch('works.json?_=' + Date.now(), { cache: 'no-store' }).then(r => r.json()),
-    fetch('about.json?_=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null)
+    fetchLive('works', 'works.json'),
+    fetchLive('about', 'about.json').catch(() => null)
   ])
     .then(async ([publicWorks, about]) => {
       let works = publicWorks;
