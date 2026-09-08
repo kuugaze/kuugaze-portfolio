@@ -17,7 +17,7 @@
   "siteWidth": 1475,
   "galleryLayout": "grid",
   "gridColumns": 5,
-  "gridGapX": 0,
-  "gridGapY": 0,
-  "showCaptions": true
+  "gridGapX": 13,
+  "gridGapY": 14,
+  "showCaptions": false
 }
