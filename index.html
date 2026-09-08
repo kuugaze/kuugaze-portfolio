@@ -453,14 +453,19 @@
     border:0;
   }
   .file-choose-btn{
+    /* Fixed white/flat regardless of light-or-dark theme, so every
+       "ファイルを選択" button in the admin panel looks identical. */
     display:inline-block;
     font-size:11px;
     padding:6px 10px;
-    border:1px solid var(--line);
+    border:1px solid #dcdcdc;
     border-radius:4px;
     cursor:pointer;
-    color:var(--ink);
-    background:var(--card-bg);
+    color:#1a1a1a;
+    background:#ffffff;
+  }
+  .file-choose-btn:hover{
+    background:#f2f2f2;
   }
   .drop-hint{
     font-size:11px;
@@ -1072,7 +1077,6 @@
     const d = key === 'about' ? ABOUT : WORKS_BY_KEY[key];
     if(!d) return;
     body.innerHTML = renderProject(d);
-    applyThemeToRichText(body, ABOUT.themeColor);
     overlay.hidden = false;
     overlay.scrollTop = 0;
     lockBodyScroll();
@@ -1802,12 +1806,11 @@
     location.href = url.toString();
   }
 
-  // Applies the theme-color / caption-style / About-thumb-color settings as
-  // CSS custom properties. A set themeColor overrides the About thumb's
-  // color and both caption text colors; when it's cleared, each of those
-  // three falls back to its own individually-set color (or, if that's also
-  // unset, the site's default accent/ink/sub color via the CSS var()
-  // fallback chain already built into the rules that use these vars).
+  // Applies the About-thumb-color / caption-style settings as CSS custom
+  // properties. Each one applies only when individually set on its own
+  // field (there used to also be a site-wide "theme color" override here
+  // that replaced all of these at once -- that feature was removed, so
+  // each color/font/weight/size now always comes from its own field).
   function setCssVar(name, value){
     if(value !== null && value !== undefined && value !== ''){
       document.documentElement.style.setProperty(name, value);
@@ -1816,13 +1819,7 @@
     }
   }
   function applyThemeStyleVars(about){
-    const theme = about.themeColor || '';
-    setCssVar('--about-thumb-color', theme || about.aboutThumbColor || '');
-    // The top-page category/title caption colors are intentionally NOT
-    // themed -- only their own individually-set color applies, even when
-    // a theme color is active. (Theme color still covers the About thumb
-    // above, and colored text inside work/About body copy via
-    // applyThemeToRichText.)
+    setCssVar('--about-thumb-color', about.aboutThumbColor || '');
     setCssVar('--caption-label-color', about.captionLabelColor || '');
     setCssVar('--caption-title-color', about.captionTitleColor || '');
     setCssVar('--caption-label-font', about.captionLabelFont || '');
@@ -1831,48 +1828,6 @@
     setCssVar('--caption-title-font', about.captionTitleFont || '');
     setCssVar('--caption-title-weight', about.captionTitleWeight || '');
     setCssVar('--caption-title-size', about.captionTitleSize ? about.captionTitleSize + 'px' : '');
-  }
-
-  // Resolves any CSS color string (hex, rgb(), named color) to its
-  // "rgb(r, g, b)" form so different spellings of the same color (e.g.
-  // "#fff", "#ffffff", "white", "rgb(255,255,255)") compare equal.
-  function normalizeColor(colorStr){
-    const tmp = document.createElement('div');
-    tmp.style.display = 'none';
-    tmp.style.color = colorStr;
-    document.body.appendChild(tmp);
-    const rgb = getComputedStyle(tmp).color;
-    document.body.removeChild(tmp);
-    return rgb;
-  }
-  // Work/About body text is free-form rich text (the RTE lets the admin
-  // color individual words/lines via inline style="color:..." or legacy
-  // <font color="..."> tags). When a theme color is set, every colored
-  // run of text should switch to the theme color EXCEPT text the admin
-  // explicitly made white -- that's used as an "unstyled/default" color
-  // and should stay as-is. Only text with an actual inline color is
-  // touched; anything with no explicit color already follows the normal
-  // --ink text color and needs no change.
-  function applyThemeToRichText(container, themeColor){
-    if(!container || !themeColor) return;
-    const whiteRgb = normalizeColor('#ffffff');
-    const themeRgb = normalizeColor(themeColor);
-    container.querySelectorAll('[style*="color"]').forEach(el => {
-      const c = el.style.color;
-      if(!c) return;
-      const norm = normalizeColor(c);
-      if(norm !== whiteRgb && norm !== themeRgb){
-        el.style.color = themeColor;
-      }
-    });
-    container.querySelectorAll('font[color]').forEach(el => {
-      const c = el.getAttribute('color');
-      if(!c) return;
-      const norm = normalizeColor(c);
-      if(norm !== whiteRgb && norm !== themeRgb){
-        el.setAttribute('color', themeColor);
-      }
-    });
   }
 
   let weState = null;
@@ -1905,8 +1860,9 @@
         <div class="we-field">
           <label>サムネイル</label>
           <img class="we-thumb-preview" id="weThumbPreview" src="${currentThumb ? escapeAttr(resolveImgSrc(currentThumb)) : ''}" ${currentThumb ? '' : 'style="display:none"'}>
-          <input type="file" id="weThumbFile" accept="image/*">
+          <label class="file-choose-btn" for="weThumbFile">ファイルを選択</label>
           <span class="drop-hint">またはドラッグ&amp;ドロップ</span>
+          <input type="file" id="weThumbFile" accept="image/*" class="file-input-visually-hidden">
         </div>`;
     const categoryTitleHtml = isAbout ? '' : `
         <div class="we-field"><label>カテゴリ</label><input type="text" id="weCategory" value="${isNew ? '' : escapeAttr(work.category || '')}"></div>
@@ -1982,8 +1938,9 @@
         <div class="we-field">
           <label>ギャラリー画像</label>
           <div class="we-gallery-list" id="weGalleryList"></div>
-          <input type="file" id="weGalleryFile" accept="image/*" multiple>
+          <label class="file-choose-btn" for="weGalleryFile">ファイルを選択</label>
           <span class="drop-hint">またはドラッグ&amp;ドロップ（複数可）</span>
+          <input type="file" id="weGalleryFile" accept="image/*" multiple class="file-input-visually-hidden">
         </div>
         <div class="we-field">
           <label>ギャラリー表示形式</label>
@@ -2065,7 +2022,6 @@
       const previewBody = overlay.querySelector('#wePreviewBody');
       if(!previewBody) return;
       previewBody.innerHTML = renderProject(buildPreviewData());
-      applyThemeToRichText(previewBody, ABOUT.themeColor);
     }
 
     if(!isAbout){
@@ -2272,7 +2228,6 @@
           // so this save doesn't wipe out what the site settings panel set.
           aboutThumbColor: overlay.querySelector('#weAboutThumbColorEnabled').checked
             ? overlay.querySelector('#weAboutThumbColor').value : '',
-          themeColor: ABOUT.themeColor || '',
           captionLabelColor: ABOUT.captionLabelColor || '',
           captionLabelFont: ABOUT.captionLabelFont || '',
           captionLabelWeight: ABOUT.captionLabelWeight || '',
@@ -2456,14 +2411,6 @@
         <label>X（Twitter）のURL</label>
         <input type="text" id="ssXUrl" placeholder="https://x.com/yourname" value="${escapeAttr(ABOUT.xUrl || '')}">
       </div>
-      <div class="we-field">
-        <label>テーマカラー</label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="color" id="ssThemeColor" value="${ABOUT.themeColor || '#2b3fff'}">
-          <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);"><input type="checkbox" id="ssThemeColorEnabled" ${ABOUT.themeColor ? 'checked' : ''}> テーマカラーを使う</label>
-        </div>
-        <div style="font-size:11px;color:var(--sub);margin-top:4px;">ONにすると、Aboutサムネの色と、作品/About本文中の色付き文字を一括で変更します（トップページのカテゴリ・タイトルの文字色は含みません）。OFFの場合は個別に設定できます。</div>
-      </div>
       ${captionLabelStyleHtml}
       ${captionTitleStyleHtml}
       <button id="ssSaveBtn">保存して公開する</button>
@@ -2595,8 +2542,6 @@
       document.documentElement.classList.toggle('hide-captions', !showCaptionsInput.checked);
     });
 
-    const themeColorInput = panel.querySelector('#ssThemeColor');
-    const themeColorEnabledInput = panel.querySelector('#ssThemeColorEnabled');
     const captionLabelColorInput = panel.querySelector('#ssCaptionLabelColor');
     const captionLabelFontInput = panel.querySelector('#ssCaptionLabelFont');
     const captionLabelWeightInput = panel.querySelector('#ssCaptionLabelWeight');
@@ -2605,9 +2550,8 @@
     const captionTitleFontInput = panel.querySelector('#ssCaptionTitleFont');
     const captionTitleWeightInput = panel.querySelector('#ssCaptionTitleWeight');
     const captionTitleSizeInput = panel.querySelector('#ssCaptionTitleSize');
-    function currentThemeStylePayload(){
+    function currentCaptionStylePayload(){
       return {
-        themeColor: themeColorEnabledInput.checked ? themeColorInput.value : '',
         aboutThumbColor: ABOUT.aboutThumbColor || '',
         captionLabelColor: captionLabelColorInput.value,
         captionLabelFont: captionLabelFontInput.value,
@@ -2619,14 +2563,14 @@
         captionTitleSize: parseInt(captionTitleSizeInput.value, 10) || null,
       };
     }
-    function applyThemeStylePreview(){
-      applyThemeStyleVars(currentThemeStylePayload());
+    function applyCaptionStylePreview(){
+      applyThemeStyleVars(currentCaptionStylePayload());
     }
-    [themeColorInput, themeColorEnabledInput, captionLabelColorInput, captionLabelFontInput,
+    [captionLabelColorInput, captionLabelFontInput,
      captionLabelWeightInput, captionLabelSizeInput, captionTitleColorInput, captionTitleFontInput,
      captionTitleWeightInput, captionTitleSizeInput].forEach(el => {
-      el.addEventListener('input', applyThemeStylePreview);
-      el.addEventListener('change', applyThemeStylePreview);
+      el.addEventListener('input', applyCaptionStylePreview);
+      el.addEventListener('change', applyCaptionStylePreview);
     });
 
     panel.querySelector('#ssSaveBtn').addEventListener('click', async () => {
@@ -2657,7 +2601,7 @@
         gridColumns: parseInt(gridColumnsInput.value, 10),
         gridGapX: parseInt(gridGapXInput.value, 10),
         gridGapY: parseInt(gridGapYInput.value, 10),
-        ...currentThemeStylePayload(),
+        ...currentCaptionStylePayload(),
         newAvatar: ssState.pendingAvatarFile ? 'AVATAR' : null,
         newBanner: ssState.pendingBannerFile ? 'BANNER' : null,
         // This panel doesn't edit the thumbnail/video/gallery (that's done in
@@ -2691,7 +2635,6 @@
         ABOUT.gridColumns = payload.gridColumns;
         ABOUT.gridGapX = payload.gridGapX;
         ABOUT.gridGapY = payload.gridGapY;
-        ABOUT.themeColor = payload.themeColor;
         ABOUT.aboutThumbColor = payload.aboutThumbColor;
         ABOUT.captionLabelColor = payload.captionLabelColor;
         ABOUT.captionLabelFont = payload.captionLabelFont;
@@ -2719,7 +2662,7 @@
     panel.innerHTML = `
       <div class="admin-title">管理者モード</div>
       <div class="admin-desc">カードをドラッグして並び替え、左上の「編集」でサムネ・キャプション・画像・動画を変更、右上のボタンで公開・非公開を切り替えられます。変更したらボタンを押すと自動でサイトに反映されます（確認や送信操作は不要です）。</div>
-      <button id="adminCopyBtn">並び替えを保存する</button>
+      <button id="adminCopyBtn">並び替え・公開状態を保存する</button>
       <div id="adminStatus"></div>
       <button id="adminAddNewBtn">＋ 新しい作品を追加</button>
       <button id="adminHardReloadBtn" title="Ctrl+Shift+R相当：キャッシュを無視して再読み込み">🔄 強制再読み込み</button>
