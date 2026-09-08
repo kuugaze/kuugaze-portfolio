@@ -17,6 +17,6 @@
   "siteWidth": 1190,
   "galleryLayout": "grid",
   "gridColumns": 4,
-  "gridGapX": 0,
-  "gridGapY": 0
+  "gridGapX": 16,
+  "gridGapY": 20
 }
