@@ -19,5 +19,5 @@
   "gridColumns": 5,
   "gridGapX": 13,
   "gridGapY": 14,
-  "showCaptions": false
+  "showCaptions": true
 }
