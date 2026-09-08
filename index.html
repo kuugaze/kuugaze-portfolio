@@ -2361,8 +2361,12 @@
       const roleLines = roleInput.value.split('\n');
       const payload = {
         type: 'about',
-        subtitleEn: ABOUT.subtitleEn || ABOUT.subtitle || '',
-        subtitleJp: ABOUT.subtitleJp || ABOUT.subtitle || '',
+        // The subtitle field was retired -- always send empty rather than
+        // falling back to the old combined ABOUT.subtitle, which would
+        // otherwise resurrect it and get it folded into the body again
+        // (duplicated) the next time the About editor is opened.
+        subtitleEn: '',
+        subtitleJp: '',
         en: ABOUT.en || '',
         jp: ABOUT.jp || '',
         name: nameInput.value.trim(),
