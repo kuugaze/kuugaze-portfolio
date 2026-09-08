@@ -1770,8 +1770,13 @@
   function applyThemeStyleVars(about){
     const theme = about.themeColor || '';
     setCssVar('--about-thumb-color', theme || about.aboutThumbColor || '');
-    setCssVar('--caption-label-color', theme || about.captionLabelColor || '');
-    setCssVar('--caption-title-color', theme || about.captionTitleColor || '');
+    // The top-page category/title caption colors are intentionally NOT
+    // themed -- only their own individually-set color applies, even when
+    // a theme color is active. (Theme color still covers the About thumb
+    // above, and colored text inside work/About body copy via
+    // applyThemeToRichText.)
+    setCssVar('--caption-label-color', about.captionLabelColor || '');
+    setCssVar('--caption-title-color', about.captionTitleColor || '');
     setCssVar('--caption-label-font', about.captionLabelFont || '');
     setCssVar('--caption-label-weight', about.captionLabelWeight || '');
     setCssVar('--caption-label-size', about.captionLabelSize ? about.captionLabelSize + 'px' : '');
@@ -2402,7 +2407,7 @@
           <input type="color" id="ssThemeColor" value="${ABOUT.themeColor || '#2b3fff'}">
           <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);"><input type="checkbox" id="ssThemeColorEnabled" ${ABOUT.themeColor ? 'checked' : ''}> テーマカラーを使う</label>
         </div>
-        <div style="font-size:11px;color:var(--sub);margin-top:4px;">ONにすると、Aboutサムネの色と下記の作品キャプションの文字色を一括で変更します。OFFの場合は個別に設定できます。</div>
+        <div style="font-size:11px;color:var(--sub);margin-top:4px;">ONにすると、Aboutサムネの色と、作品/About本文中の色付き文字を一括で変更します（トップページのカテゴリ・タイトルの文字色は含みません）。OFFの場合は個別に設定できます。</div>
       </div>
       ${captionLabelStyleHtml}
       ${captionTitleStyleHtml}
