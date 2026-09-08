@@ -755,10 +755,6 @@
     color:var(--ink);
     cursor:pointer;
   }
-  .rte-editor.rte-editor-subtitle{
-    min-height:44px;
-    max-height:120px;
-  }
   .rte-editor{
     min-height:110px;
     max-height:260px;
@@ -1173,6 +1169,19 @@
     // little more on every save (& becoming &amp; becoming &amp;amp; ...).
     const html = editorEl.innerHTML;
     return looksLikeHtml(html) ? html : editorEl.textContent;
+  }
+  // Merges `extra` text/HTML into `base` (used to fold a removed field's
+  // content into the body so nothing is lost, and its own color/font/size
+  // formatting survives instead of being flattened to plain text).
+  function mergeIntoBody(base, extra, prepend){
+    if(!extra) return base;
+    if(!base) return extra;
+    if(looksLikeHtml(base) || looksLikeHtml(extra)){
+      const baseHtml = looksLikeHtml(base) ? base : escapeHtml(base).replace(/\n/g, '<br>');
+      const extraHtml = looksLikeHtml(extra) ? extra : escapeHtml(extra).replace(/\n/g, '<br>');
+      return prepend ? (extraHtml + '<br><br>' + baseHtml) : (baseHtml + '<br><br>' + extraHtml);
+    }
+    return prepend ? (extra + '\n\n' + base) : (base + '\n\n' + extra);
   }
   function askLinkUrlInline(container){
     return new Promise((resolve) => {
@@ -1746,8 +1755,6 @@
           <img class="we-thumb-preview" id="weThumbPreview" src="${isNew ? '' : escapeAttr(resolveImgSrc(work.thumb))}" ${isNew ? 'style="display:none"' : ''}>
           <input type="file" id="weThumbFile" accept="image/*">
         </div>`;
-    const workCatClean = (!isAbout && !isNew) ? (work.category || '').replace(/[【】\[\]]/g, '').trim() : '';
-    const workDefaultSubtitle = (!isAbout && !isNew) ? (workCatClean ? `${workCatClean} @${work.title || ''}` : (work.title || '')) : '';
     const categoryTitleHtml = isAbout ? '' : `
         <div class="we-field"><label>カテゴリ</label><input type="text" id="weCategory" value="${isNew ? '' : escapeAttr(work.category || '')}"></div>
         <div class="we-field"><label>タイトル（必須）</label><input type="text" id="weTitle" value="${isNew ? '' : escapeAttr(work.title || '')}"></div>`;
@@ -1786,19 +1793,9 @@
         </div>`;
     const enJpEmbedGalleryHtml = isAbout ? '' : `
         <div class="we-field">
-          <label>サブタイトル（英語）</label>
-          ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-subtitle-en-toolbar')}
-          <div class="rte-editor rte-editor-subtitle" id="weSubtitleEn"></div>
-        </div>
-        <div class="we-field">
           <label>本文（英語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-en-toolbar')}
           <div class="rte-editor" id="weEn"></div>
-        </div>
-        <div class="we-field">
-          <label>サブタイトル（日本語）</label>
-          ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-subtitle-jp-toolbar')}
-          <div class="rte-editor rte-editor-subtitle" id="weSubtitleJp"></div>
         </div>
         <div class="we-field">
           <label>本文（日本語）</label>
@@ -1820,19 +1817,9 @@
         </div>`;
     const aboutFieldsHtml = isAbout ? `
         <div class="we-field">
-          <label>サブタイトル（英語）</label>
-          ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-subtitle-en-toolbar')}
-          <div class="rte-editor rte-editor-subtitle" id="weSubtitleEn"></div>
-        </div>
-        <div class="we-field">
           <label>本文（英語）</label>
           ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-en-toolbar')}
           <div class="rte-editor" id="weAboutEn"></div>
-        </div>
-        <div class="we-field">
-          <label>サブタイトル（日本語）</label>
-          ${richToolbarHtml.replace('rte-toolbar', 'rte-toolbar we-about-subtitle-jp-toolbar')}
-          <div class="rte-editor rte-editor-subtitle" id="weSubtitleJp"></div>
         </div>
         <div class="we-field">
           <label>本文（日本語）</label>
@@ -1869,36 +1856,20 @@
     `;
     document.body.appendChild(overlay);
 
-    function getEditorText(id){
-      const el = overlay.querySelector('#' + id);
-      return el ? serializeEditorContent(el).trim() : '';
-    }
     function buildPreviewData(){
       if(isAbout){
         const weAboutEnEl = overlay.querySelector('#weAboutEn');
         const weAboutJpEl = overlay.querySelector('#weAboutJp');
         return {
-          subtitleEn: getEditorText('weSubtitleEn'),
-          subtitleJp: getEditorText('weSubtitleJp'),
           en: weAboutEnEl ? serializeEditorContent(weAboutEnEl) : '',
           jp: weAboutJpEl ? serializeEditorContent(weAboutJpEl) : ''
         };
       }
-      const title = (overlay.querySelector('#weTitle')?.value || '').trim();
-      const category = (overlay.querySelector('#weCategory')?.value || '').trim();
-      const catClean = category.replace(/[【】\[\]]/g, '').trim();
-      const defaultSubtitle = catClean ? `${catClean} @${title}` : title;
-      const subtitleEnField = getEditorText('weSubtitleEn');
-      const subtitleJpField = getEditorText('weSubtitleJp');
-      const subtitleEn = subtitleEnField || defaultSubtitle;
-      const subtitleJp = subtitleJpField || defaultSubtitle;
       const weEnEl = overlay.querySelector('#weEn');
       const weJpEl = overlay.querySelector('#weJp');
       const embed = parseEmbedUrl(overlay.querySelector('#weEmbed')?.value || '');
       const images = weState.galleryOrder.map(it => it.kind === 'existing' ? resolveImgSrc(it.ref) : URL.createObjectURL(it.ref));
       return {
-        subtitleEn,
-        subtitleJp,
         en: weEnEl ? serializeEditorContent(weEnEl) : '',
         jp: weJpEl ? serializeEditorContent(weJpEl) : '',
         embed,
@@ -1915,10 +1886,17 @@
     if(!isAbout){
       const weEnEl = overlay.querySelector('#weEn');
       const weJpEl = overlay.querySelector('#weJp');
-      const weSubtitleEnEl = overlay.querySelector('#weSubtitleEn');
-      const weSubtitleJpEl = overlay.querySelector('#weSubtitleJp');
       let initialEn = isNew ? '' : (work.en || '');
       let initialJp = isNew ? '' : (work.jp || '');
+      // The subtitle field was removed -- fold any existing subtitle text
+      // (with its own color/font/size formatting) into the top of the body so
+      // nothing is lost, and it's all editable in one place from now on.
+      // Written back with subtitleEn/Jp cleared the next time this work is
+      // saved.
+      if(!isNew && work){
+        initialEn = mergeIntoBody(initialEn, work.subtitleEn || work.subtitle || '', true);
+        initialJp = mergeIntoBody(initialJp, work.subtitleJp || work.subtitle || '', true);
+      }
       // Legacy works may still hold text in the old, separate heading2/meta/note
       // fields (no longer editable on their own). Fold that text into the body
       // so it becomes visible and editable in place; it's written back into
@@ -1929,24 +1907,13 @@
         if(work.meta) extraParts.push(work.meta);
         if(work.note) extraParts.push(work.note);
         const extraText = extraParts.join('\n\n');
-        const appendTo = (base) => {
-          if(looksLikeHtml(base)){
-            const extraHtml = escapeHtml(extraText).replace(/\n/g, '<br>');
-            return base ? (base + '<br><br>' + extraHtml) : extraHtml;
-          }
-          return base ? (base + '\n\n' + extraText) : extraText;
-        };
-        initialEn = appendTo(initialEn);
-        initialJp = appendTo(initialJp);
+        initialEn = mergeIntoBody(initialEn, extraText, false);
+        initialJp = mergeIntoBody(initialJp, extraText, false);
       }
       loadIntoEditor(weEnEl, initialEn);
       loadIntoEditor(weJpEl, initialJp);
-      loadIntoEditor(weSubtitleEnEl, isNew ? '' : (work.subtitleEn || work.subtitle || workDefaultSubtitle));
-      loadIntoEditor(weSubtitleJpEl, isNew ? '' : (work.subtitleJp || work.subtitle || workDefaultSubtitle));
       setupRichEditor(overlay.querySelector('.we-en-toolbar'), weEnEl, updatePreview);
       setupRichEditor(overlay.querySelector('.we-jp-toolbar'), weJpEl, updatePreview);
-      setupRichEditor(overlay.querySelector('.we-subtitle-en-toolbar'), weSubtitleEnEl, updatePreview);
-      setupRichEditor(overlay.querySelector('.we-subtitle-jp-toolbar'), weSubtitleJpEl, updatePreview);
       overlay.querySelector('#weCategory')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weTitle')?.addEventListener('input', updatePreview);
       overlay.querySelector('#weEmbed')?.addEventListener('input', updatePreview);
@@ -1954,16 +1921,12 @@
     }else{
       const weAboutEnEl = overlay.querySelector('#weAboutEn');
       const weAboutJpEl = overlay.querySelector('#weAboutJp');
-      const weSubtitleEnEl = overlay.querySelector('#weSubtitleEn');
-      const weSubtitleJpEl = overlay.querySelector('#weSubtitleJp');
-      loadIntoEditor(weAboutEnEl, ABOUT.en || '');
-      loadIntoEditor(weAboutJpEl, ABOUT.jp || '');
-      loadIntoEditor(weSubtitleEnEl, ABOUT.subtitleEn || ABOUT.subtitle || '');
-      loadIntoEditor(weSubtitleJpEl, ABOUT.subtitleJp || ABOUT.subtitle || '');
+      const initialAboutEn = mergeIntoBody(ABOUT.en || '', ABOUT.subtitleEn || ABOUT.subtitle || '', true);
+      const initialAboutJp = mergeIntoBody(ABOUT.jp || '', ABOUT.subtitleJp || ABOUT.subtitle || '', true);
+      loadIntoEditor(weAboutEnEl, initialAboutEn);
+      loadIntoEditor(weAboutJpEl, initialAboutJp);
       setupRichEditor(overlay.querySelector('.we-about-en-toolbar'), weAboutEnEl, updatePreview);
       setupRichEditor(overlay.querySelector('.we-about-jp-toolbar'), weAboutJpEl, updatePreview);
-      setupRichEditor(overlay.querySelector('.we-about-subtitle-en-toolbar'), weSubtitleEnEl, updatePreview);
-      setupRichEditor(overlay.querySelector('.we-about-subtitle-jp-toolbar'), weSubtitleJpEl, updatePreview);
     }
 
     // Finds the gallery item a dragged thumbnail should be inserted before,
@@ -2071,8 +2034,8 @@
       if(isAbout){
         const payload = {
           type: 'about',
-          subtitleEn: serializeEditorContent(overlay.querySelector('#weSubtitleEn')).trim(),
-          subtitleJp: serializeEditorContent(overlay.querySelector('#weSubtitleJp')).trim(),
+          subtitleEn: '',
+          subtitleJp: '',
           en: serializeEditorContent(overlay.querySelector('#weAboutEn')).trim(),
           jp: serializeEditorContent(overlay.querySelector('#weAboutJp')).trim(),
           name: ABOUT.name || 'kuugaze',
@@ -2120,18 +2083,14 @@
         return token;
       });
       const existingImages = weState.galleryOrder.filter(it => it.kind === 'existing').map(it => it.ref);
-      const catClean = category.replace(/[【】\[\]]/g, '').trim();
-      const defaultSubtitle = catClean ? `${catClean} @${title}` : title;
-      const finalSubtitleEn = serializeEditorContent(overlay.querySelector('#weSubtitleEn')).trim() || defaultSubtitle;
-      const finalSubtitleJp = serializeEditorContent(overlay.querySelector('#weSubtitleJp')).trim() || defaultSubtitle;
       const payload = {
         type: 'work',
         key: weState.key,
         original: (!isNew && work) ? work : null,
         category,
         title,
-        subtitleEn: finalSubtitleEn,
-        subtitleJp: finalSubtitleJp,
+        subtitleEn: '',
+        subtitleJp: '',
         jp: serializeEditorContent(overlay.querySelector('#weJp')).trim(),
         en: serializeEditorContent(overlay.querySelector('#weEn')).trim(),
         heading2: '',
