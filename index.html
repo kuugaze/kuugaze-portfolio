@@ -125,6 +125,11 @@
   .card{
     display:block;
     cursor:pointer;
+    /* Grid items default to min-width:auto, so a card whose caption text
+       can't break anywhere would otherwise force its whole column wider
+       than its fair share -- most visible with more, narrower columns.
+       min-width:0 lets every column share the row equally as intended. */
+    min-width:0;
   }
   .thumb{
     position:relative;
