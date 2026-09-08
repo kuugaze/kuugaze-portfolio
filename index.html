@@ -979,8 +979,17 @@
     return `<div class="${cls}">${images.map(src=>`<img src="${resolveImgSrc(src)}" alt="" loading="lazy">`).join('')}</div>`;
   }
   function renderProject(d){
-    const subtitleEn = d.subtitleEn || d.subtitle || '';
-    const subtitleJp = d.subtitleJp || d.subtitle || '';
+    // subtitleEn/subtitleJp are still shown as their own styled heading for
+    // works that haven't been resaved since subtitle-editing was retired --
+    // that's correct as long as the text only lives there. But the legacy
+    // pre-split `subtitle` field (and, for About, the same field) was, for
+    // some entries, already folded into the body once by an earlier version
+    // of the editor -- so falling back to it here as well would render that
+    // same text a second time, right on top of the copy already sitting in
+    // the body. Only subtitleEn/subtitleJp themselves are used now; the
+    // legacy `subtitle` field is never read for display again.
+    const subtitleEn = d.subtitleEn || '';
+    const subtitleJp = d.subtitleJp || '';
     let html = '';
     if(subtitleEn) html += `<div class="proj-subtitle">${renderBody(subtitleEn)}</div>`;
     if(d.en) html += `<div class="proj-text">${renderBody(d.en)}</div>`;
