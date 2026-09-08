@@ -119,8 +119,8 @@
 
   .grid{
     display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:20px 16px;
+    grid-template-columns:repeat(var(--grid-columns, 4),1fr);
+    gap:var(--grid-gap-y, 20px) var(--grid-gap-x, 16px);
   }
   .card{
     display:block;
@@ -183,7 +183,9 @@
     .layout{ grid-template-columns:1fr; }
     .profile{ position:static; }
     .avatar{ margin-top:-40px; }
-    .grid{ grid-template-columns:repeat(2,1fr); }
+    /* Mobile always shows a fixed 2-column grid with its original gap,
+       regardless of the desktop-only column-count/gap sliders below. */
+    .grid{ grid-template-columns:repeat(2,1fr); gap:20px 16px; }
     .socials{ flex-direction:row; flex-wrap:wrap; gap:20px; }
     .socials a{ padding:6px 0; }
   }
@@ -2202,6 +2204,18 @@
         <input type="range" id="ssSiteWidth" min="200" max="3000" step="5" value="${ABOUT.siteWidth || 1240}">
       </div>
       <div class="we-field">
+        <label>ギャラリー列数（PC）<span class="we-range-val" id="ssGridColumnsVal">${ABOUT.gridColumns || 4}列</span></label>
+        <input type="range" id="ssGridColumns" min="1" max="10" step="1" value="${ABOUT.gridColumns || 4}">
+      </div>
+      <div class="we-field">
+        <label>作品の隙間・横<span class="we-range-val" id="ssGridGapXVal">${ABOUT.gridGapX ?? 16}px</span></label>
+        <input type="range" id="ssGridGapX" min="0" max="60" step="1" value="${ABOUT.gridGapX ?? 16}">
+      </div>
+      <div class="we-field">
+        <label>作品の隙間・縦<span class="we-range-val" id="ssGridGapYVal">${ABOUT.gridGapY ?? 20}px</span></label>
+        <input type="range" id="ssGridGapY" min="0" max="60" step="1" value="${ABOUT.gridGapY ?? 20}">
+      </div>
+      <div class="we-field">
         <label>表示設定</label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowName" ${ABOUT.showName === false ? '' : 'checked'}> 名前を表示</label>
         <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:12px;color:var(--ink);margin-bottom:6px;"><input type="checkbox" id="ssShowRole" ${ABOUT.showRole === false ? '' : 'checked'}> 肩書を表示</label>
@@ -2277,6 +2291,27 @@
       document.documentElement.style.setProperty('--site-width', siteWidthInput.value + 'px');
     });
 
+    const gridColumnsInput = panel.querySelector('#ssGridColumns');
+    const gridColumnsVal = panel.querySelector('#ssGridColumnsVal');
+    gridColumnsInput.addEventListener('input', () => {
+      gridColumnsVal.textContent = gridColumnsInput.value + '列';
+      document.documentElement.style.setProperty('--grid-columns', gridColumnsInput.value);
+    });
+
+    const gridGapXInput = panel.querySelector('#ssGridGapX');
+    const gridGapXVal = panel.querySelector('#ssGridGapXVal');
+    gridGapXInput.addEventListener('input', () => {
+      gridGapXVal.textContent = gridGapXInput.value + 'px';
+      document.documentElement.style.setProperty('--grid-gap-x', gridGapXInput.value + 'px');
+    });
+
+    const gridGapYInput = panel.querySelector('#ssGridGapY');
+    const gridGapYVal = panel.querySelector('#ssGridGapYVal');
+    gridGapYInput.addEventListener('input', () => {
+      gridGapYVal.textContent = gridGapYInput.value + 'px';
+      document.documentElement.style.setProperty('--grid-gap-y', gridGapYInput.value + 'px');
+    });
+
     const showNameInput = panel.querySelector('#ssShowName');
     const showRoleInput = panel.querySelector('#ssShowRole');
     const showInstagramInput = panel.querySelector('#ssShowInstagram');
@@ -2341,6 +2376,9 @@
         xUrl: xUrlInput.value.trim(),
         bannerHeight: parseInt(bannerHeightInput.value, 10),
         siteWidth: parseInt(siteWidthInput.value, 10),
+        gridColumns: parseInt(gridColumnsInput.value, 10),
+        gridGapX: parseInt(gridGapXInput.value, 10),
+        gridGapY: parseInt(gridGapYInput.value, 10),
         newAvatar: ssState.pendingAvatarFile ? 'AVATAR' : null,
         newBanner: ssState.pendingBannerFile ? 'BANNER' : null,
         // This panel doesn't edit the thumbnail/video/gallery (that's done in
@@ -2370,6 +2408,9 @@
         ABOUT.xUrl = payload.xUrl;
         ABOUT.bannerHeight = payload.bannerHeight;
         ABOUT.siteWidth = payload.siteWidth;
+        ABOUT.gridColumns = payload.gridColumns;
+        ABOUT.gridGapX = payload.gridGapX;
+        ABOUT.gridGapY = payload.gridGapY;
         hardReload();
       }
     });
@@ -2462,6 +2503,11 @@
       }
       document.documentElement.style.setProperty('--banner-height', (ABOUT.bannerHeight || 190) + 'px');
       document.documentElement.style.setProperty('--site-width', (ABOUT.siteWidth || 1240) + 'px');
+      // Desktop-only gallery column count/gap (mobile keeps its own fixed
+      // layout via the max-width media queries, which don't read these vars).
+      document.documentElement.style.setProperty('--grid-columns', String(ABOUT.gridColumns || 4));
+      document.documentElement.style.setProperty('--grid-gap-x', (ABOUT.gridGapX ?? 16) + 'px');
+      document.documentElement.style.setProperty('--grid-gap-y', (ABOUT.gridGapY ?? 20) + 'px');
       const adminVerified = isAdmin ? await verifyAdminAccess() : false;
       if(adminVerified){
         // The public works.json above never contains hidden works -- fetch
