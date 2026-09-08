@@ -18,5 +18,6 @@
   "galleryLayout": "grid",
   "gridColumns": 5,
   "gridGapX": 0,
-  "gridGapY": 0
+  "gridGapY": 0,
+  "showCaptions": false
 }
