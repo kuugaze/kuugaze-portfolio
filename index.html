@@ -1221,11 +1221,39 @@
     // inside the editor so we can restore it right before running a
     // formatting command from the toolbar.
     let savedRange = null;
+    // The size dropdown otherwise keeps whatever value it last showed, so
+    // re-picking that same value (while the actually-selected text is a
+    // different size) fires no native change event and applyFontSize never
+    // runs. Syncing the dropdown to the real current selection's size on
+    // every selection change means any deliberate choice always differs from
+    // what's shown, so it always fires.
+    function getSelectionFontSize(){
+      const sel = window.getSelection();
+      if(!sel || sel.rangeCount === 0) return null;
+      let node = sel.anchorNode;
+      if(!node || !editorEl.contains(node)) return null;
+      if(node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+      while(node && node !== editorEl){
+        if(node.style && node.style.fontSize){
+          return parseInt(node.style.fontSize, 10);
+        }
+        node = node.parentNode;
+      }
+      return 13; // base .proj-text size when no explicit size is set
+    }
+    function syncSizeSelect(){
+      if(!sizeSelect) return;
+      const size = getSelectionFontSize();
+      if(size == null) return;
+      const hasOption = Array.from(sizeSelect.options).some(o => o.value === String(size));
+      sizeSelect.value = hasOption ? String(size) : '';
+    }
     function saveSelection(){
       const sel = window.getSelection();
       if(sel && sel.rangeCount > 0 && editorEl.contains(sel.anchorNode)){
         savedRange = sel.getRangeAt(0).cloneRange();
       }
+      syncSizeSelect();
     }
     editorEl.addEventListener('mouseup', saveSelection);
     editorEl.addEventListener('keyup', saveSelection);
