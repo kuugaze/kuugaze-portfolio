@@ -7,14 +7,16 @@
 <link rel="icon" id="favicon" type="image/png" href="images/favicon.png">
 <script>
   // Runs before the main script so the tab icon is correct from first
-  // paint: the public favicon is the default (set via the <link> above),
-  // and this swaps it to the admin favicon only when ?kuugazeadmin=1 is
-  // present. Kept intentionally standalone/duplicated from the main
-  // script's own admin check further down, since that runs much later.
+  // paint: picks the public or admin favicon depending on ?kuugazeadmin=1,
+  // and always appends a cache-busting query param so a freshly-uploaded
+  // favicon (via the admin panel) shows up immediately on next load instead
+  // of being stuck behind the browser's aggressive favicon-specific cache.
+  // Kept intentionally standalone/duplicated from the main script's own
+  // admin check further down, since that runs much later.
   (function(){
-    if(new URLSearchParams(location.search).get('kuugazeadmin') === '1'){
-      document.getElementById('favicon').href = 'images/favicon-admin.png';
-    }
+    var isAdmin = new URLSearchParams(location.search).get('kuugazeadmin') === '1';
+    var path = isAdmin ? 'images/favicon-admin.png' : 'images/favicon.png';
+    document.getElementById('favicon').href = path + '?v=' + Date.now();
   })();
 </script>
 <style>
@@ -2759,6 +2761,21 @@
         // still be serving the pre-save version for up to a minute or two
         // after the commit (CDN propagation lag), making a successful save
         // look like it silently reverted.
+        //
+        // The favicon is the one exception: it's not part of the page's own
+        // DOM state, it's the browser's separately-cached tab icon, so a
+        // freshly-uploaded one won't show up on its own. Force it to
+        // re-fetch right now with a new cache-busting param so the tab icon
+        // updates the instant the save succeeds, without waiting for a
+        // reload (which, per above, could even show a stale one anyway).
+        if(ssState.pendingFaviconFile || ssState.pendingFaviconAdminFile){
+          const isAdminPage = new URLSearchParams(location.search).get('kuugazeadmin') === '1';
+          const path = isAdminPage ? 'images/favicon-admin.png' : 'images/favicon.png';
+          const faviconLink = document.getElementById('favicon');
+          if(faviconLink) faviconLink.href = path + '?v=' + Date.now();
+          ssState.pendingFaviconFile = null;
+          ssState.pendingFaviconAdminFile = null;
+        }
       }
     });
   }
