@@ -1867,6 +1867,47 @@
     }
   }
 
+  // Hashes a File/Blob so an uploaded favicon can be compared byte-for-byte
+  // against what's actually being served live, rather than guessing from a
+  // fixed delay.
+  async function sha256OfBlob(blob){
+    const buf = await blob.arrayBuffer();
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // GitHub Pages' own CDN takes a little while (usually under a minute, but
+  // not instant) to start serving a just-committed file -- that lag isn't
+  // something this page's code can skip. Rather than leaving the admin
+  // guessing whether a save "worked" during that window, this polls the
+  // live file every couple of seconds and compares its hash against the
+  // uploaded one, so the status line can say the instant it's *actually*
+  // confirmed live instead of an optimistic message shown right after the
+  // GitHub commit succeeds.
+  async function pollFaviconLive(path, file, label, statusEl){
+    const expectedHex = await sha256OfBlob(file);
+    const started = Date.now();
+    const timeoutMs = 90000;
+    while(Date.now() - started < timeoutMs){
+      try{
+        const res = await fetch(path + '?v=' + Date.now(), { cache: 'no-store' });
+        if(res.ok){
+          const liveHex = await sha256OfBlob(await res.blob());
+          if(liveHex === expectedHex){
+            if(statusEl) statusEl.textContent = `${label}の反映を確認しました（${Math.round((Date.now()-started)/1000)}秒）。`;
+            const link = document.getElementById('favicon');
+            if(link && link.getAttribute('href').split('?')[0] === path) link.href = path + '?v=' + Date.now();
+            return true;
+          }
+        }
+      }catch(e){ /* transient network hiccup while GitHub Pages updates -- keep polling */ }
+      if(statusEl) statusEl.textContent = `${label}の反映を確認中…（${Math.round((Date.now()-started)/1000)}秒経過）`;
+      await new Promise(r => setTimeout(r, 2000));
+    }
+    if(statusEl) statusEl.textContent = `${label}の反映確認がタイムアウトしました。GitHub Pages側の反映に時間がかかっている可能性があります。少し待ってからページを再読み込みしてご確認ください。`;
+    return false;
+  }
+
   // Ctrl+Shift+R-equivalent: a real browser hard-reload can't be triggered
   // from page script, so this gets as close as script can -- navigating to
   // the same URL with a fresh cache-busting param, forcing the browser to
@@ -2764,18 +2805,24 @@
         //
         // The favicon is the one exception: it's not part of the page's own
         // DOM state, it's the browser's separately-cached tab icon, so a
-        // freshly-uploaded one won't show up on its own. Force it to
-        // re-fetch right now with a new cache-busting param so the tab icon
-        // updates the instant the save succeeds, without waiting for a
-        // reload (which, per above, could even show a stale one anyway).
-        if(ssState.pendingFaviconFile || ssState.pendingFaviconAdminFile){
-          const isAdminPage = new URLSearchParams(location.search).get('kuugazeadmin') === '1';
-          const path = isAdminPage ? 'images/favicon-admin.png' : 'images/favicon.png';
-          const faviconLink = document.getElementById('favicon');
-          if(faviconLink) faviconLink.href = path + '?v=' + Date.now();
-          ssState.pendingFaviconFile = null;
-          ssState.pendingFaviconAdminFile = null;
-        }
+        // freshly-uploaded one won't show up on its own, and the file also
+        // isn't actually live on GitHub Pages the instant this response
+        // comes back (CDN propagation lag). Rather than optimistically
+        // flipping the icon and calling it done, poll the real live file
+        // until it matches what was uploaded and only then report success --
+        // that way the status line reflects reality instead of guessing.
+        (async () => {
+          if(ssState.pendingFaviconFile){
+            const f = ssState.pendingFaviconFile;
+            ssState.pendingFaviconFile = null;
+            await pollFaviconLive('images/favicon.png', f, 'favicon（通常URL用）', status);
+          }
+          if(ssState.pendingFaviconAdminFile){
+            const f = ssState.pendingFaviconAdminFile;
+            ssState.pendingFaviconAdminFile = null;
+            await pollFaviconLive('images/favicon-admin.png', f, 'favicon（管理者用）', status);
+          }
+        })();
       }
     });
   }
