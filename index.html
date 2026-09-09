@@ -2427,25 +2427,25 @@
     panel.innerHTML = `
       <div class="we-field">
         <label>プロフィール画像</label>
-        <img class="we-thumb-preview" id="ssAvatarPreview" src="images/avatar.png" style="width:64px;height:64px;border-radius:50%;">
+        <img class="we-thumb-preview" id="ssAvatarPreview" src="images/avatar.png?v=${Date.now()}" style="width:64px;height:64px;border-radius:50%;">
         <label class="file-choose-btn" for="ssAvatarFile">ファイルを選択</label>
         <input type="file" id="ssAvatarFile" accept="image/*" class="file-input-visually-hidden">
       </div>
       <div class="we-field">
         <label>ヘッダー画像</label>
-        <img class="we-thumb-preview" id="ssBannerPreview" src="images/banner.png" style="width:100%;height:60px;object-fit:cover;border-radius:4px;">
+        <img class="we-thumb-preview" id="ssBannerPreview" src="images/banner.png?v=${Date.now()}" style="width:100%;height:60px;object-fit:cover;border-radius:4px;">
         <label class="file-choose-btn" for="ssBannerFile">ファイルを選択</label>
         <input type="file" id="ssBannerFile" accept="image/*" class="file-input-visually-hidden">
       </div>
       <div class="we-field">
         <label>favicon（通常URL用・誰でも見られるページ）</label>
-        <img class="we-thumb-preview" id="ssFaviconPreview" src="images/favicon.png" style="width:32px;height:32px;border-radius:4px;">
+        <img class="we-thumb-preview" id="ssFaviconPreview" src="images/favicon.png?v=${Date.now()}" style="width:32px;height:32px;border-radius:4px;">
         <label class="file-choose-btn" for="ssFaviconFile">ファイルを選択</label>
         <input type="file" id="ssFaviconFile" accept="image/*" class="file-input-visually-hidden">
       </div>
       <div class="we-field">
         <label>favicon（管理者用・?kuugazeadmin=1のページ）</label>
-        <img class="we-thumb-preview" id="ssFaviconAdminPreview" src="images/favicon-admin.png" style="width:32px;height:32px;border-radius:4px;">
+        <img class="we-thumb-preview" id="ssFaviconAdminPreview" src="images/favicon-admin.png?v=${Date.now()}" style="width:32px;height:32px;border-radius:4px;">
         <label class="file-choose-btn" for="ssFaviconAdminFile">ファイルを選択</label>
         <input type="file" id="ssFaviconAdminFile" accept="image/*" class="file-input-visually-hidden">
       </div>
