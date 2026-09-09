@@ -2411,7 +2411,7 @@
     const existing = document.getElementById('siteSettingsPanel');
     if(existing) return;
 
-    ssState = { pendingAvatarFile: null, pendingBannerFile: null };
+    ssState = { pendingAvatarFile: null, pendingBannerFile: null, pendingFaviconFile: null, pendingFaviconAdminFile: null };
 
     const captionLabelStyleHtml = captionStyleFieldHtml('ssCaptionLabel', 'カテゴリの文字スタイル', '#6b6b6b', 500, 11, {
       color: ABOUT.captionLabelColor, font: ABOUT.captionLabelFont, weight: ABOUT.captionLabelWeight, size: ABOUT.captionLabelSize
@@ -2434,6 +2434,18 @@
         <img class="we-thumb-preview" id="ssBannerPreview" src="images/banner.png" style="width:100%;height:60px;object-fit:cover;border-radius:4px;">
         <label class="file-choose-btn" for="ssBannerFile">ファイルを選択</label>
         <input type="file" id="ssBannerFile" accept="image/*" class="file-input-visually-hidden">
+      </div>
+      <div class="we-field">
+        <label>favicon（通常URL用・誰でも見られるページ）</label>
+        <img class="we-thumb-preview" id="ssFaviconPreview" src="images/favicon.png" style="width:32px;height:32px;border-radius:4px;">
+        <label class="file-choose-btn" for="ssFaviconFile">ファイルを選択</label>
+        <input type="file" id="ssFaviconFile" accept="image/*" class="file-input-visually-hidden">
+      </div>
+      <div class="we-field">
+        <label>favicon（管理者用・?kuugazeadmin=1のページ）</label>
+        <img class="we-thumb-preview" id="ssFaviconAdminPreview" src="images/favicon-admin.png" style="width:32px;height:32px;border-radius:4px;">
+        <label class="file-choose-btn" for="ssFaviconAdminFile">ファイルを選択</label>
+        <input type="file" id="ssFaviconAdminFile" accept="image/*" class="file-input-visually-hidden">
       </div>
       <div class="we-field">
         <label>名前</label>
@@ -2512,8 +2524,31 @@
       if(realBanner) realBanner.style.backgroundImage = `url("${url}")`;
     });
 
+    // favicon uploads: public-site and admin-only are two separate files
+    // (images/favicon.png / images/favicon-admin.png), picked purely by
+    // which URL is open -- see the swap script at the top of <head>. No
+    // preview beyond the thumbnail here since a favicon is too small for
+    // an on-page preview to matter, and neither one is an about.json field
+    // (like avatar/banner, they're fixed paths written straight to GitHub).
+    const faviconFileInput = panel.querySelector('#ssFaviconFile');
+    faviconFileInput.addEventListener('change', () => {
+      const f = faviconFileInput.files[0];
+      if(!f) return;
+      ssState.pendingFaviconFile = f;
+      panel.querySelector('#ssFaviconPreview').src = URL.createObjectURL(f);
+    });
+    const faviconAdminFileInput = panel.querySelector('#ssFaviconAdminFile');
+    faviconAdminFileInput.addEventListener('change', () => {
+      const f = faviconAdminFileInput.files[0];
+      if(!f) return;
+      ssState.pendingFaviconAdminFile = f;
+      panel.querySelector('#ssFaviconAdminPreview').src = URL.createObjectURL(f);
+    });
+
     enableDropUpload(avatarFileInput.closest('.we-field'), avatarFileInput);
     enableDropUpload(bannerFileInput.closest('.we-field'), bannerFileInput);
+    enableDropUpload(faviconFileInput.closest('.we-field'), faviconFileInput);
+    enableDropUpload(faviconAdminFileInput.closest('.we-field'), faviconAdminFileInput);
 
     const nameInput = panel.querySelector('#ssName');
     nameInput.addEventListener('input', () => {
@@ -2672,6 +2707,8 @@
         ...currentCaptionStylePayload(),
         newAvatar: ssState.pendingAvatarFile ? 'AVATAR' : null,
         newBanner: ssState.pendingBannerFile ? 'BANNER' : null,
+        newFavicon: ssState.pendingFaviconFile ? 'FAVICON' : null,
+        newFaviconAdmin: ssState.pendingFaviconAdminFile ? 'FAVICON_ADMIN' : null,
         // This panel doesn't edit the thumbnail/video/gallery (that's done in
         // the About content editor) -- pass the current values straight
         // through unchanged so this save doesn't wipe them.
@@ -2686,6 +2723,8 @@
       const files = {};
       if(ssState.pendingAvatarFile) files['AVATAR'] = ssState.pendingAvatarFile;
       if(ssState.pendingBannerFile) files['BANNER'] = ssState.pendingBannerFile;
+      if(ssState.pendingFaviconFile) files['FAVICON'] = ssState.pendingFaviconFile;
+      if(ssState.pendingFaviconAdminFile) files['FAVICON_ADMIN'] = ssState.pendingFaviconAdminFile;
       const success = await publishSiteUpdate(payload, files, status);
       if(success){
         ABOUT.name = payload.name;
