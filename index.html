@@ -4,6 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>kuugaze</title>
+<link rel="icon" id="favicon" type="image/png" href="images/favicon.png">
+<script>
+  // Runs before the main script so the tab icon is correct from first
+  // paint: the public favicon is the default (set via the <link> above),
+  // and this swaps it to the admin favicon only when ?kuugazeadmin=1 is
+  // present. Kept intentionally standalone/duplicated from the main
+  // script's own admin check further down, since that runs much later.
+  (function(){
+    if(new URLSearchParams(location.search).get('kuugazeadmin') === '1'){
+      document.getElementById('favicon').href = 'images/favicon-admin.png';
+    }
+  })();
+</script>
 <style>
   :root{
     --bg:#f4f4f2;
