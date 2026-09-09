@@ -1829,6 +1829,10 @@
   }
 
   async function publishSiteUpdate(payload, files, statusEl){
+    // Clear out any red/green left over from a previous favicon poll (see
+    // pollFaviconLive below) so an unrelated later message doesn't
+    // inherit its color.
+    if(statusEl) statusEl.style.color = '';
     const secret = await getAdminSecret(statusEl);
     if(!secret){
       if(statusEl) statusEl.textContent = 'シークレットキーが入力されなかったため、公開を中止しました。';
@@ -1894,17 +1898,26 @@
         if(res.ok){
           const liveHex = await sha256OfBlob(await res.blob());
           if(liveHex === expectedHex){
-            if(statusEl) statusEl.textContent = `${label}の反映を確認しました（${Math.round((Date.now()-started)/1000)}秒）。`;
+            if(statusEl){
+              statusEl.style.color = '#1e8e3e';
+              statusEl.textContent = `${label} 更新完了（反映確認まで${Math.round((Date.now()-started)/1000)}秒）`;
+            }
             const link = document.getElementById('favicon');
             if(link && link.getAttribute('href').split('?')[0] === path) link.href = path + '?v=' + Date.now();
             return true;
           }
         }
       }catch(e){ /* transient network hiccup while GitHub Pages updates -- keep polling */ }
-      if(statusEl) statusEl.textContent = `${label}の反映を確認中…（${Math.round((Date.now()-started)/1000)}秒経過）`;
+      if(statusEl){
+        statusEl.style.color = '#d93025';
+        statusEl.textContent = `※ ${label}の反映を確認中…（${Math.round((Date.now()-started)/1000)}秒経過）`;
+      }
       await new Promise(r => setTimeout(r, 2000));
     }
-    if(statusEl) statusEl.textContent = `${label}の反映確認がタイムアウトしました。GitHub Pages側の反映に時間がかかっている可能性があります。少し待ってからページを再読み込みしてご確認ください。`;
+    if(statusEl){
+      statusEl.style.color = '#d93025';
+      statusEl.textContent = `※ ${label}の反映確認がタイムアウトしました。GitHub Pages側の反映に時間がかかっている可能性があります。少し待ってからページを再読み込みしてご確認ください。`;
+    }
     return false;
   }
 
